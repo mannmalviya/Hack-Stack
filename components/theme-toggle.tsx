@@ -3,6 +3,7 @@
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useSyncExternalStore } from "react";
+import { flushSync } from "react-dom";
 
 const subscribe = () => () => undefined;
 
@@ -10,7 +11,17 @@ export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
   const mounted = useSyncExternalStore(subscribe, () => true, () => false);
 
+  function applyTheme(theme: "light" | "dark") {
+    const root = document.documentElement;
+    root.classList.remove("light", "dark");
+    root.classList.add(theme);
+    root.style.colorScheme = theme;
+    flushSync(() => setTheme(theme));
+  }
+
   function toggleTheme() {
+    if (!mounted) return;
+
     const nextTheme = resolvedTheme === "dark" ? "light" : "dark";
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const transitionDocument = document as Document & {
@@ -20,12 +31,12 @@ export function ThemeToggle() {
     };
 
     if (!transitionDocument.startViewTransition || reduceMotion) {
-      setTheme(nextTheme);
+      applyTheme(nextTheme);
       return;
     }
 
     const transition = transitionDocument.startViewTransition(() => {
-      setTheme(nextTheme);
+      applyTheme(nextTheme);
     });
 
     transition.ready.then(() => {
@@ -45,13 +56,14 @@ export function ThemeToggle() {
           pseudoElement: "::view-transition-new(root)",
         },
       );
-    });
+    }).catch(() => applyTheme(nextTheme));
   }
 
   return (
     <button
       type="button"
       onClick={toggleTheme}
+      disabled={!mounted}
       className="grid size-8 place-items-center rounded-lg border border-[#d5d7da] bg-[#fafafa] text-[#30343a] shadow-sm transition-colors hover:bg-[#f0f1f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30 dark:border-border dark:bg-white/5 dark:text-zinc-300 dark:hover:bg-white/10"
       aria-label={mounted ? `Switch to ${resolvedTheme === "dark" ? "light" : "dark"} theme` : "Toggle theme"}
     >
