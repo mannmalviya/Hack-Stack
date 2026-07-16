@@ -82,6 +82,7 @@
 - Keep integrations and domain logic outside page components.
 - Use typed boundaries for imports, analysis jobs, evidence, verification runs, and AI-provider responses.
 - Put background import, analysis, and browser-verification work in a worker module/package; do not run long jobs in a page request.
+- Add concise, human-readable comments where they clarify intent, non-obvious logic, constraints, or tradeoffs; avoid comments that merely restate the code.
 
 ## Verification
 
