@@ -1,17 +1,25 @@
-import { CalendarDays, FolderKanban, MapPin, Tag } from "lucide-react";
+import { CalendarDays, Database, FolderKanban } from "lucide-react";
 import Link from "next/link";
-import type { Hackathon, HackathonStatus } from "@/lib/hackathons";
+import type { EventStatus, HackathonListItem, IndexingStatus } from "@/lib/data/hackathons";
 
-const statusLabels: Record<HackathonStatus, string> = {
-  open: "Open",
-  judging: "In judging",
+const statusLabels: Record<EventStatus, string> = {
+  upcoming: "Upcoming",
+  active: "Active",
   completed: "Completed",
 };
 
-const statusClasses: Record<HackathonStatus, string> = {
-  open: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
-  judging: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+const statusClasses: Record<EventStatus, string> = {
+  upcoming: "bg-blue-500/10 text-blue-700 dark:text-blue-400",
+  active: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
   completed: "bg-zinc-500/10 text-zinc-600 dark:text-zinc-400",
+};
+
+const indexingLabels: Record<IndexingStatus, string> = {
+  queued: "Queued",
+  running: "Indexing",
+  succeeded: "Indexed",
+  partial: "Partially indexed",
+  failed: "Failed",
 };
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -21,16 +29,15 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
   timeZone: "UTC",
 });
 
-function formatDateRange(startsAt: string, endsAt: string) {
+function formatDateRange(startsAt: string | null, endsAt: string | null) {
+  if (!startsAt && !endsAt) return "Dates unavailable";
+  if (!startsAt) return `Ends ${dateFormatter.format(new Date(endsAt!))}`;
+  if (!endsAt) return `Starts ${dateFormatter.format(new Date(startsAt))}`;
   return `${dateFormatter.format(new Date(startsAt))} – ${dateFormatter.format(new Date(endsAt))}`;
 }
 
-function formatLocation(location: Hackathon["location"]) {
-  if (location === "in-person") return "In person";
-  return location[0].toUpperCase() + location.slice(1);
-}
-
-export function HackathonCard({ hackathon }: { hackathon: Hackathon }) {
+export function HackathonCard({ hackathon }: { hackathon: HackathonListItem }) {
+  const initials = hackathon.name.split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word[0]).join("").toUpperCase();
   return (
     <Link
       href={`/hackathons/${hackathon.slug}`}
@@ -39,10 +46,10 @@ export function HackathonCard({ hackathon }: { hackathon: Hackathon }) {
       <div className="flex items-center justify-center border-b border-border p-5 md:border-r md:border-b-0">
         <div
           className="grid aspect-square w-full max-w-24 place-items-center text-xl font-bold tracking-[-0.04em] text-white shadow-sm"
-          style={{ backgroundColor: hackathon.accent }}
+          style={{ backgroundColor: "#25a993" }}
           aria-hidden="true"
         >
-          {hackathon.initials}
+          {initials}
         </div>
       </div>
 
@@ -51,30 +58,26 @@ export function HackathonCard({ hackathon }: { hackathon: Hackathon }) {
           <h2 className="text-lg font-semibold tracking-[-0.03em] text-foreground sm:text-xl">
             {hackathon.name}
           </h2>
-          <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${statusClasses[hackathon.status]}`}>
-            {statusLabels[hackathon.status]}
+          <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${statusClasses[hackathon.eventStatus]}`}>
+            {statusLabels[hackathon.eventStatus]}
           </span>
         </div>
-        <p className="mt-2 line-clamp-2 text-sm leading-5 text-muted">{hackathon.description}</p>
+        <p className="mt-2 line-clamp-2 text-sm leading-5 text-muted">{hackathon.description ?? "No event description was published."}</p>
         <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-xs text-muted">
-          <span className="flex items-center gap-1.5"><MapPin size={14} />{formatLocation(hackathon.location)}</span>
-          <span className="flex items-center gap-1.5"><FolderKanban size={14} />{hackathon.projectCount} projects</span>
+          <span className="flex items-center gap-1.5"><FolderKanban size={14} />{hackathon.indexedProjectCount} indexed</span>
+          {hackathon.availableProjectCount !== null && <span>{hackathon.availableProjectCount} available on Devpost</span>}
         </div>
       </div>
 
       <div className="flex flex-col border-t border-border p-5 md:border-t-0 md:border-l">
-        <p className="text-xs font-medium text-foreground">{hackathon.organizer}</p>
+        <p className="text-xs font-medium text-foreground">{hackathon.organizer ?? "Organizer unavailable"}</p>
         <p className="mt-3 flex items-start gap-2 text-xs leading-5 text-muted">
           <CalendarDays className="mt-0.5 shrink-0" size={14} />
           {formatDateRange(hackathon.startsAt, hackathon.endsAt)}
         </p>
-        <div className="mt-4 flex items-start gap-2">
-          <Tag className="mt-1 shrink-0 text-muted" size={14} />
-          <div className="flex flex-wrap gap-1.5">
-            {hackathon.tags.slice(0, 3).map((tag) => (
-              <span key={tag} className="bg-blue-500/8 px-2 py-1 text-[11px] text-blue-700 dark:text-blue-300">{tag}</span>
-            ))}
-          </div>
+        <div className="mt-4 flex items-center gap-2 text-xs text-muted">
+          <Database size={14} />
+          {indexingLabels[hackathon.indexingStatus]}
         </div>
       </div>
 

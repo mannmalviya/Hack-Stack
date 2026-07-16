@@ -1,14 +1,19 @@
 import type { Metadata } from "next";
 import { HackathonExplorer } from "@/components/hackathons/hackathon-explorer";
-import { hackathons } from "@/lib/hackathons";
+import { getHackathons } from "@/lib/data/hackathons";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Hackathons | HackStack",
   description: "Browse approved hackathons and inspect their submitted projects.",
 };
 
-export default function HackathonsPage() {
-  const activeCount = hackathons.filter(({ status }) => status !== "completed").length;
+export default async function HackathonsPage() {
+  const hackathons = await getHackathons();
+  const indexedCount = hackathons.filter(({ indexingStatus }) =>
+    indexingStatus === "succeeded" || indexingStatus === "partial",
+  ).length;
 
   return (
     <div className="space-y-8">
@@ -21,8 +26,8 @@ export default function HackathonsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2 text-xs text-muted">
-          <span className="rounded-md border border-border bg-surface px-2.5 py-1.5">{hackathons.length} indexed</span>
-          <span className="rounded-md border border-border bg-surface px-2.5 py-1.5">{activeCount} active</span>
+          <span className="rounded-md border border-border bg-surface px-2.5 py-1.5">{hackathons.length} records</span>
+          <span className="rounded-md border border-border bg-surface px-2.5 py-1.5">{indexedCount} indexed</span>
         </div>
       </section>
 

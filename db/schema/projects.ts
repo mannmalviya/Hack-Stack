@@ -24,6 +24,12 @@ export const projects = pgTable(
     devpostSlug: text("devpost_slug").notNull(),
     name: text().notNull(),
     tagline: text(),
+    coverImageSourceUrl: text("cover_image_source_url"),
+    coverImagePath: text("cover_image_path"),
+    coverImageFetchedAt: timestamp("cover_image_fetched_at", {
+      withTimezone: true,
+      mode: "string",
+    }),
     description: text(),
     demoUrl: text("demo_url"),
     videoUrl: text("video_url"),

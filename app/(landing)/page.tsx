@@ -1,78 +1,13 @@
 import { ArrowRight, Orbit, Search, ShieldCheck, Sparkles } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { LandingProjectCard, type LandingProject } from "@/components/landing/landing-project-card";
+import { LandingProjectCard } from "@/components/landing/landing-project-card";
+import { getFeaturedProjects } from "@/lib/data/hackathons";
 
-const featuredProjects: LandingProject[] = [
-  {
-    name: "AstraCare",
-    tagline: "An AI care navigator that turns fragmented health information into a clear next step.",
-    hackathon: "Global AI Hackathon",
-    hackathonSlug: "global-ai-hackathon-2026",
-    projectSlug: "astracare",
-    category: "Health AI",
-    color: "#7dd3fc",
-    icon: "✦",
-    sources: ["github", "demo"],
-  },
-  {
-    name: "TerraTrace",
-    tagline: "Neighborhood-scale climate intelligence for communities planning around extreme heat.",
-    hackathon: "Climate Tech Build",
-    hackathonSlug: "climate-tech-build",
-    projectSlug: "terratrace",
-    category: "Climate",
-    color: "#6ee7b7",
-    icon: "◎",
-    sources: ["github", "demo"],
-  },
-  {
-    name: "OrbitOps",
-    tagline: "A multi-agent control room for understanding and automating complex team operations.",
-    hackathon: "Agentic Commerce",
-    hackathonSlug: "agentic-commerce",
-    projectSlug: "orbitops",
-    category: "Agents",
-    color: "#c4b5fd",
-    icon: "◉",
-    sources: ["github"],
-  },
-  {
-    name: "Signal Garden",
-    tagline: "An open-source observability layer that makes distributed systems easier to explain.",
-    hackathon: "Open Source Sprint",
-    hackathonSlug: "open-source-sprint",
-    projectSlug: "signal-garden",
-    category: "Developer Tools",
-    color: "#f9a8d4",
-    icon: "⌁",
-    sources: ["github", "demo"],
-  },
-  {
-    name: "Northstar",
-    tagline: "A learning companion that maps curiosity into personal, evidence-backed study paths.",
-    hackathon: "Future of Learning",
-    hackathonSlug: "future-of-learning",
-    projectSlug: "northstar",
-    category: "Education",
-    color: "#fde68a",
-    icon: "✺",
-    sources: ["demo"],
-  },
-  {
-    name: "Pulse Commons",
-    tagline: "Privacy-conscious community health signals designed for local response teams.",
-    hackathon: "Health Forward",
-    hackathonSlug: "health-forward",
-    projectSlug: "pulse-commons",
-    category: "Social Good",
-    color: "#fda4af",
-    icon: "◇",
-    sources: ["github", "demo"],
-  },
-];
+export const dynamic = "force-dynamic";
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const featuredProjects = await getFeaturedProjects();
   return (
     <main className="overflow-hidden bg-[#05060a]">
       <section className="relative isolate min-h-[94vh] border-b border-white/10">
@@ -136,11 +71,17 @@ export default function LandingPage() {
           <p className="max-w-sm text-sm leading-6 text-white/45">Choose a project to open its evidence workspace and start exploring the build.</p>
         </div>
 
-        <div className="relative grid gap-px bg-white/10 sm:grid-cols-2 lg:grid-cols-3">
-          {featuredProjects.map((project, index) => (
-            <LandingProjectCard key={project.projectSlug} project={project} index={index} />
-          ))}
-        </div>
+        {featuredProjects.length > 0 ? (
+          <div className="relative grid gap-px bg-white/10 sm:grid-cols-2 lg:grid-cols-3">
+            {featuredProjects.map((project, index) => (
+              <LandingProjectCard key={`${project.hackathonSlug}:${project.slug}`} project={project} index={index} />
+            ))}
+          </div>
+        ) : (
+          <div className="relative border border-dashed border-white/15 px-6 py-16 text-center text-sm text-white/50">
+            No projects have been indexed yet.
+          </div>
+        )}
       </section>
 
       <section className="border-y border-white/10 bg-white/[0.025]">

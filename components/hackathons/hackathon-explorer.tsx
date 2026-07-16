@@ -3,27 +3,28 @@
 import { RotateCcw } from "lucide-react";
 import { useMemo, useState } from "react";
 import { HackathonCard } from "@/components/hackathons/hackathon-card";
-import type { Hackathon, HackathonLocation, HackathonStatus } from "@/lib/hackathons";
+import type { EventStatus, HackathonListItem, IndexingStatus } from "@/lib/data/hackathons";
 
 type Filters = {
-  locations: HackathonLocation[];
-  statuses: HackathonStatus[];
-  tags: string[];
+  eventStatuses: EventStatus[];
+  indexingStatuses: IndexingStatus[];
   hosts: string[];
 };
 
-const emptyFilters: Filters = { locations: [], statuses: [], tags: [], hosts: [] };
+const emptyFilters: Filters = { eventStatuses: [], indexingStatuses: [], hosts: [] };
 
-const locationOptions: { value: HackathonLocation; label: string }[] = [
-  { value: "online", label: "Online" },
-  { value: "in-person", label: "In person" },
-  { value: "hybrid", label: "Hybrid" },
+const eventStatusOptions: { value: EventStatus; label: string }[] = [
+  { value: "upcoming", label: "Upcoming" },
+  { value: "active", label: "Active" },
+  { value: "completed", label: "Completed" },
 ];
 
-const statusOptions: { value: HackathonStatus; label: string }[] = [
-  { value: "open", label: "Open" },
-  { value: "judging", label: "In judging" },
-  { value: "completed", label: "Completed" },
+const indexingStatusOptions: { value: IndexingStatus; label: string }[] = [
+  { value: "succeeded", label: "Indexed" },
+  { value: "partial", label: "Partially indexed" },
+  { value: "running", label: "Indexing" },
+  { value: "queued", label: "Queued" },
+  { value: "failed", label: "Failed" },
 ];
 
 function FilterOption({ label, checked, onChange }: { label: string; checked: boolean; onChange: () => void }) {
@@ -49,10 +50,11 @@ function FilterGroup({ title, children }: { title: string; children: React.React
   );
 }
 
-export function HackathonExplorer({ hackathons }: { hackathons: Hackathon[] }) {
+export function HackathonExplorer({ hackathons }: { hackathons: HackathonListItem[] }) {
   const [filters, setFilters] = useState<Filters>(emptyFilters);
-  const tags = [...new Set(hackathons.flatMap((hackathon) => hackathon.tags))].slice(0, 7);
-  const hosts = [...new Set(hackathons.map((hackathon) => hackathon.organizer))];
+  const hosts = [...new Set(
+    hackathons.map((hackathon) => hackathon.organizer).filter((host): host is string => Boolean(host)),
+  )];
 
   function toggle<K extends keyof Filters>(key: K, value: Filters[K][number]) {
     setFilters((current) => {
@@ -64,10 +66,9 @@ export function HackathonExplorer({ hackathons }: { hackathons: Hackathon[] }) {
 
   const filteredHackathons = useMemo(
     () => hackathons.filter((hackathon) =>
-      (!filters.locations.length || filters.locations.includes(hackathon.location)) &&
-      (!filters.statuses.length || filters.statuses.includes(hackathon.status)) &&
-      (!filters.tags.length || filters.tags.some((tag) => hackathon.tags.includes(tag))) &&
-      (!filters.hosts.length || filters.hosts.includes(hackathon.organizer))),
+      (!filters.eventStatuses.length || filters.eventStatuses.includes(hackathon.eventStatus)) &&
+      (!filters.indexingStatuses.length || filters.indexingStatuses.includes(hackathon.indexingStatus)) &&
+      (!filters.hosts.length || (hackathon.organizer !== null && filters.hosts.includes(hackathon.organizer)))),
     [filters, hackathons],
   );
 
@@ -85,14 +86,11 @@ export function HackathonExplorer({ hackathons }: { hackathons: Hackathon[] }) {
           )}
         </div>
         <div className="grid gap-7 sm:grid-cols-2 lg:grid-cols-1">
-          <FilterGroup title="Location">
-            {locationOptions.map(({ value, label }) => <FilterOption key={value} label={label} checked={filters.locations.includes(value)} onChange={() => toggle("locations", value)} />)}
+          <FilterGroup title="Event status">
+            {eventStatusOptions.map(({ value, label }) => <FilterOption key={value} label={label} checked={filters.eventStatuses.includes(value)} onChange={() => toggle("eventStatuses", value)} />)}
           </FilterGroup>
-          <FilterGroup title="Status">
-            {statusOptions.map(({ value, label }) => <FilterOption key={value} label={label} checked={filters.statuses.includes(value)} onChange={() => toggle("statuses", value)} />)}
-          </FilterGroup>
-          <FilterGroup title="Interest tags">
-            {tags.map((tag) => <FilterOption key={tag} label={tag} checked={filters.tags.includes(tag)} onChange={() => toggle("tags", tag)} />)}
+          <FilterGroup title="Indexing status">
+            {indexingStatusOptions.map(({ value, label }) => <FilterOption key={value} label={label} checked={filters.indexingStatuses.includes(value)} onChange={() => toggle("indexingStatuses", value)} />)}
           </FilterGroup>
           <FilterGroup title="Host">
             <select
