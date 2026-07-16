@@ -90,3 +90,8 @@ Run before handing off code:
 ```bash
 npm run lint
 npm run build
+```
+
+## Commit attribution
+
+- Append `Co-authored-by: Codex <noreply@openai.com>` to every commit created in this repository.

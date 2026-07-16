@@ -1,0 +1,8 @@
+#!/bin/sh
+
+commit_message_file="$1"
+codex_trailer='Co-authored-by: Codex <noreply@openai.com>'
+
+if ! grep -Fqx "$codex_trailer" "$commit_message_file"; then
+  printf '\n%s\n' "$codex_trailer" >> "$commit_message_file"
+fi
