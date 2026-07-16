@@ -65,7 +65,6 @@ export default async function HackathonPage({ params }: PageProps) {
           <div>
             <p className="text-xs font-medium text-blue-600 dark:text-blue-400">{hackathon.organizer ?? "Organizer unavailable"}</p>
             <h1 className="mt-1 text-2xl font-semibold tracking-[-0.04em] sm:text-3xl">{hackathon.name}</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">{hackathon.description ?? "No event description was published."}</p>
             <a href={hackathon.devpostUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1.5 text-xs text-blue-600 hover:underline dark:text-blue-400">
               View source on Devpost <ExternalLink size={12} />
             </a>

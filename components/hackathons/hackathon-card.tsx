@@ -73,7 +73,6 @@ export function HackathonCard({ hackathon }: { hackathon: HackathonListItem }) {
             {statusLabels[hackathon.eventStatus]}
           </span>
         </div>
-        <p className="mt-2 line-clamp-2 text-sm leading-5 text-muted">{hackathon.description ?? "No event description was published."}</p>
         <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-muted">
           <span className="flex items-center gap-1.5">
             <FolderKanban size={14} />

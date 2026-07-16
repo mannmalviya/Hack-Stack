@@ -73,8 +73,8 @@ export default async function LandingPage() {
 
         {featuredProjects.length > 0 ? (
           <div className="relative grid gap-px bg-white/10 sm:grid-cols-2 lg:grid-cols-3">
-            {featuredProjects.map((project, index) => (
-              <LandingProjectCard key={`${project.hackathonSlug}:${project.slug}`} project={project} index={index} />
+            {featuredProjects.map((project) => (
+              <LandingProjectCard key={`${project.hackathonSlug}:${project.slug}`} project={project} />
             ))}
           </div>
         ) : (
