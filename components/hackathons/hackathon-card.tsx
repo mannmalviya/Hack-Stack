@@ -2,6 +2,7 @@ import { CalendarDays, Database, FolderKanban } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import type { EventStatus, HackathonListItem, IndexingStatus } from "@/lib/data/hackathons";
+import { formatIndexedProjectCount, indexCoverageLabels } from "@/lib/index-coverage";
 
 const statusLabels: Record<EventStatus, string> = {
   upcoming: "Upcoming",
@@ -16,11 +17,11 @@ const statusClasses: Record<EventStatus, string> = {
 };
 
 const indexingLabels: Record<IndexingStatus, string> = {
-  queued: "Queued",
-  running: "Indexing",
-  succeeded: "Indexed",
-  partial: "Partially indexed",
-  failed: "Failed",
+  queued: "Import queued",
+  running: "Import in progress",
+  succeeded: "Last import succeeded",
+  partial: "Last import had issues",
+  failed: "Last import failed",
 };
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -73,9 +74,17 @@ export function HackathonCard({ hackathon }: { hackathon: HackathonListItem }) {
           </span>
         </div>
         <p className="mt-2 line-clamp-2 text-sm leading-5 text-muted">{hackathon.description ?? "No event description was published."}</p>
-        <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-xs text-muted">
-          <span className="flex items-center gap-1.5"><FolderKanban size={14} />{hackathon.indexedProjectCount} indexed</span>
-          {hackathon.availableProjectCount !== null && <span>{hackathon.availableProjectCount} available on Devpost</span>}
+        <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-muted">
+          <span className="flex items-center gap-1.5">
+            <FolderKanban size={14} />
+            {formatIndexedProjectCount(
+              hackathon.indexedProjectCount,
+              hackathon.availableProjectCount,
+            )}
+          </span>
+          <span className="rounded-full bg-zinc-500/10 px-2 py-0.5 font-medium text-foreground">
+            {indexCoverageLabels[hackathon.indexCoverage]}
+          </span>
         </div>
       </div>
 

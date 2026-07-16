@@ -5,6 +5,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProjectGrid } from "@/components/projects/project-grid";
 import { getHackathonBySlug, getProjectsByHackathon } from "@/lib/data/hackathons";
+import { formatIndexedProjectCount, indexCoverageLabels } from "@/lib/index-coverage";
 
 export const dynamic = "force-dynamic";
 
@@ -71,8 +72,14 @@ export default async function HackathonPage({ params }: PageProps) {
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2 border border-border bg-surface px-3 py-2 text-xs text-muted">
-          <FolderKanban size={14} /> {hackathon.indexedProjectCount} projects indexed
-          {hackathon.availableProjectCount !== null && ` · ${hackathon.availableProjectCount} available`}
+          <FolderKanban size={14} />
+          <span>
+            {formatIndexedProjectCount(
+              hackathon.indexedProjectCount,
+              hackathon.availableProjectCount,
+            )}
+            {` · ${indexCoverageLabels[hackathon.indexCoverage]}`}
+          </span>
         </div>
       </section>
 

@@ -4,6 +4,7 @@ import { asc, count, desc, eq } from "drizzle-orm";
 
 import { db } from "@/db";
 import { hackathons, projects } from "@/db/schema";
+import { getIndexCoverage, type IndexCoverage } from "@/lib/index-coverage";
 import { getHackathonCoverPublicUrl } from "@/lib/supabase/hackathon-covers";
 import { getProjectCoverPublicUrl } from "@/lib/supabase/project-covers";
 
@@ -21,6 +22,7 @@ export type HackathonListItem = {
   endsAt: string | null;
   availableProjectCount: number | null;
   indexedProjectCount: number;
+  indexCoverage: IndexCoverage;
   eventStatus: EventStatus;
   indexingStatus: IndexingStatus;
   lastIndexedAt: string | null;
@@ -96,6 +98,7 @@ function mapHackathon(row: HackathonRow): HackathonListItem {
   return {
     ...hackathon,
     coverImageUrl: getHackathonCoverPublicUrl(coverImagePath),
+    indexCoverage: getIndexCoverage(row.indexedProjectCount, row.availableProjectCount),
     indexingStatus: row.indexingStatus as IndexingStatus,
     eventStatus: getEventStatus(row.startsAt, row.endsAt),
   };
