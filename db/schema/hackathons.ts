@@ -20,6 +20,12 @@ export const hackathons = pgTable(
     name: text().notNull(),
     organizer: text(),
     description: text(),
+    coverImageSourceUrl: text("cover_image_source_url"),
+    coverImagePath: text("cover_image_path"),
+    coverImageFetchedAt: timestamp("cover_image_fetched_at", {
+      withTimezone: true,
+      mode: "string",
+    }),
     startsAt: timestamp("starts_at", { withTimezone: true, mode: "string" }),
     endsAt: timestamp("ends_at", { withTimezone: true, mode: "string" }),
     projectCount: integer("project_count"),
@@ -47,6 +53,10 @@ export const hackathons = pgTable(
     check(
       "hackathons_indexing_status_check",
       sql`indexing_status = ANY (ARRAY['queued'::text, 'running'::text, 'succeeded'::text, 'partial'::text, 'failed'::text])`,
+    ),
+    check(
+      "hackathons_cover_image_storage_check",
+      sql`(cover_image_path is null and cover_image_fetched_at is null) or (nullif(btrim(cover_image_path), '') is not null and cover_image_fetched_at is not null)`,
     ),
   ],
 ).enableRLS();

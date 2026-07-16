@@ -12,7 +12,7 @@ import {
   parseProjectPage,
 } from "./devpost";
 import { fetchHtml, hackathonUrlGuard, projectUrlGuard } from "./fetch";
-import { storeProjectCover } from "./project-images";
+import { storeHackathonCover, storeProjectCover } from "./project-images";
 
 export const IMPORT_LIMITS = [5, 10, 20] as const;
 export type ImportLimit = (typeof IMPORT_LIMITS)[number];
@@ -169,7 +169,28 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
     })
     .returning({ id: hackathons.id });
 
+  let imageFailures = 0;
   try {
+    if (metadata.coverImageSourceUrl) {
+      try {
+        const storedCover = await storeHackathonCover({
+          sourceUrl: metadata.coverImageSourceUrl,
+          hackathonSlug: source.devpostSlug,
+        });
+        await db
+          .update(hackathons)
+          .set({
+            coverImagePath: storedCover.path,
+            coverImageFetchedAt: storedCover.fetchedAt,
+            updatedAt: storedCover.fetchedAt,
+          })
+          .where(eq(hackathons.id, hackathon.id));
+      } catch {
+        // Keep a previously stored cover when a transient image fetch fails.
+        imageFailures += 1;
+      }
+    }
+
     const cards: GalleryProject[] = [];
     const seen = new Set<string>();
     let html = firstGalleryHtml;
@@ -200,7 +221,6 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
     if (cards.length === 0) throw new Error("No public projects were found in this gallery");
     const selectedCards = cards.slice(0, limit);
     let detailFailures = 0;
-    let imageFailures = 0;
     let completed = 0;
     const scraped = await mapConcurrent(selectedCards, concurrency, async (card) => {
       let detailFailed = false;

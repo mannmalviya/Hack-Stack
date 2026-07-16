@@ -9,6 +9,7 @@ import {
 } from "../lib/scraper/devpost";
 
 const galleryHtml = `
+  <meta property="og:image" content="https://cdn.example.com/hackathon-cover.png">
   <script type="application/ld+json" id="challenge-json-ld">
     {"@type":"Event","name":"Example Hack","description":"&lt;p&gt;Build useful things.&lt;/p&gt;","organizer":{"name":"Example Org"},"startDate":"2026-01-01T10:00:00Z","endDate":"2026-01-02T10:00:00Z"}
   </script>
@@ -48,6 +49,7 @@ test("parses event metadata and gallery cards", () => {
     name: "Example Hack",
     organizer: "Example Org",
     description: "Build useful things.",
+    coverImageSourceUrl: "https://cdn.example.com/hackathon-cover.png",
     startsAt: "2026-01-01T10:00:00.000Z",
     endsAt: "2026-01-02T10:00:00.000Z",
     projectCount: 42,

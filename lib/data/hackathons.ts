@@ -4,6 +4,7 @@ import { asc, count, desc, eq } from "drizzle-orm";
 
 import { db } from "@/db";
 import { hackathons, projects } from "@/db/schema";
+import { getHackathonCoverPublicUrl } from "@/lib/supabase/hackathon-covers";
 import { getProjectCoverPublicUrl } from "@/lib/supabase/project-covers";
 
 export type EventStatus = "upcoming" | "active" | "completed";
@@ -15,6 +16,7 @@ export type HackathonListItem = {
   name: string;
   organizer: string | null;
   description: string | null;
+  coverImageUrl: string | null;
   startsAt: string | null;
   endsAt: string | null;
   availableProjectCount: number | null;
@@ -65,6 +67,7 @@ const hackathonSelection = {
   name: hackathons.name,
   organizer: hackathons.organizer,
   description: hackathons.description,
+  coverImagePath: hackathons.coverImagePath,
   startsAt: hackathons.startsAt,
   endsAt: hackathons.endsAt,
   availableProjectCount: hackathons.projectCount,
@@ -79,6 +82,7 @@ type HackathonRow = {
   name: string;
   organizer: string | null;
   description: string | null;
+  coverImagePath: string | null;
   startsAt: string | null;
   endsAt: string | null;
   availableProjectCount: number | null;
@@ -88,8 +92,10 @@ type HackathonRow = {
 };
 
 function mapHackathon(row: HackathonRow): HackathonListItem {
+  const { coverImagePath, ...hackathon } = row;
   return {
-    ...row,
+    ...hackathon,
+    coverImageUrl: getHackathonCoverPublicUrl(coverImagePath),
     indexingStatus: row.indexingStatus as IndexingStatus,
     eventStatus: getEventStatus(row.startsAt, row.endsAt),
   };

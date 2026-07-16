@@ -12,6 +12,7 @@ export type ScrapedHackathon = {
   name: string;
   organizer: string | null;
   description: string | null;
+  coverImageSourceUrl: string | null;
   startsAt: string | null;
   endsAt: string | null;
   projectCount: number;
@@ -182,6 +183,9 @@ export function parseHackathonPage(html: string): ScrapedHackathon {
     description: optionalString(event.description)
       ? htmlToText(event.description as string)
       : null,
+    coverImageSourceUrl: normalizeHttpUrl(
+      $("meta[property='og:image']").first().attr("content"),
+    ) ?? normalizeHttpUrl($("meta[name='twitter:image']").first().attr("content")),
     startsAt: optionalDate(event.startDate),
     endsAt: optionalDate(event.endDate),
     projectCount,

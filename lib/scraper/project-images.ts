@@ -1,7 +1,8 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { HACKATHON_COVERS_BUCKET } from "@/lib/supabase/hackathon-covers";
 import { PROJECT_COVERS_BUCKET } from "@/lib/supabase/project-covers";
 
-export const MAX_PROJECT_COVER_BYTES = 5 * 1024 * 1024;
+export const MAX_COVER_IMAGE_BYTES = 5 * 1024 * 1024;
 
 const REQUEST_TIMEOUT_MS = 20_000;
 const MAX_REDIRECTS = 3;
@@ -58,10 +59,10 @@ function detectImageType(bytes: Uint8Array): Omit<DownloadedImage, "bytes"> | nu
 
 async function readBoundedImage(response: Response) {
   const contentLength = Number(response.headers.get("content-length"));
-  if (contentLength && contentLength > MAX_PROJECT_COVER_BYTES) {
-    throw new Error(`Project cover exceeded ${MAX_PROJECT_COVER_BYTES} bytes`);
+  if (contentLength && contentLength > MAX_COVER_IMAGE_BYTES) {
+    throw new Error(`Cover image exceeded ${MAX_COVER_IMAGE_BYTES} bytes`);
   }
-  if (!response.body) throw new Error("Project cover response did not include a body");
+  if (!response.body) throw new Error("Cover image response did not include a body");
 
   const chunks: Uint8Array[] = [];
   const reader = response.body.getReader();
@@ -70,9 +71,9 @@ async function readBoundedImage(response: Response) {
     const { done, value } = await reader.read();
     if (done) break;
     size += value.byteLength;
-    if (size > MAX_PROJECT_COVER_BYTES) {
+    if (size > MAX_COVER_IMAGE_BYTES) {
       await reader.cancel();
-      throw new Error(`Project cover exceeded ${MAX_PROJECT_COVER_BYTES} bytes`);
+      throw new Error(`Cover image exceeded ${MAX_COVER_IMAGE_BYTES} bytes`);
     }
     chunks.push(value);
   }
@@ -86,7 +87,7 @@ async function readBoundedImage(response: Response) {
   return bytes;
 }
 
-export async function downloadProjectCover(
+export async function downloadDevpostCover(
   input: string,
   fetcher: typeof fetch = fetch,
 ): Promise<DownloadedImage> {
@@ -124,22 +125,25 @@ export async function downloadProjectCover(
     const bytes = await readBoundedImage(response);
     const detected = detectImageType(bytes);
     if (!detected || detected.contentType !== declaredType) {
-      throw new Error(`Project cover content did not match its declared type: ${declaredType}`);
+      throw new Error(`Cover image content did not match its declared type: ${declaredType}`);
     }
     return { bytes, ...detected };
   }
 
-  throw new Error(`Too many redirects while fetching project cover ${input}`);
+  throw new Error(`Too many redirects while fetching cover image ${input}`);
 }
 
-let bucketReady: Promise<void> | null = null;
+export const downloadProjectCover = downloadDevpostCover;
 
-async function ensureProjectCoversBucket() {
-  if (bucketReady) return bucketReady;
+const readyBuckets = new Map<string, Promise<void>>();
 
-  bucketReady = (async () => {
+async function ensureCoverBucket(bucket: string) {
+  const ready = readyBuckets.get(bucket);
+  if (ready) return ready;
+
+  const configuring = (async () => {
     const storage = getSupabaseAdmin().storage;
-    const { data: existing, error: getError } = await storage.getBucket(PROJECT_COVERS_BUCKET);
+    const { data: existing, error: getError } = await storage.getBucket(bucket);
     const status = getError && "status" in getError ? getError.status : null;
     const statusCode = getError && "statusCode" in getError ? getError.statusCode : null;
     const bucketMissing = status === 404
@@ -147,33 +151,34 @@ async function ensureProjectCoversBucket() {
       || Boolean(getError && /not found/i.test(getError.message));
 
     if (getError && !bucketMissing) {
-      throw new Error(`Could not inspect ${PROJECT_COVERS_BUCKET} bucket: ${getError.message}`);
+      throw new Error(`Could not inspect ${bucket} bucket: ${getError.message}`);
     }
 
     const options = {
       public: true,
-      fileSizeLimit: MAX_PROJECT_COVER_BYTES,
+      fileSizeLimit: MAX_COVER_IMAGE_BYTES,
       allowedMimeTypes: BUCKET_MIME_TYPES,
     };
     const result = existing
-      ? await storage.updateBucket(PROJECT_COVERS_BUCKET, options)
-      : await storage.createBucket(PROJECT_COVERS_BUCKET, options);
+      ? await storage.updateBucket(bucket, options)
+      : await storage.createBucket(bucket, options);
     if (result.error) {
-      throw new Error(`Could not configure ${PROJECT_COVERS_BUCKET} bucket: ${result.error.message}`);
+      throw new Error(`Could not configure ${bucket} bucket: ${result.error.message}`);
     }
   })();
+  readyBuckets.set(bucket, configuring);
 
   try {
-    await bucketReady;
+    await configuring;
   } catch (error) {
-    bucketReady = null;
+    readyBuckets.delete(bucket);
     throw error;
   }
 }
 
 function safePathSegment(value: string) {
   const segment = value.toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "");
-  if (!segment) throw new Error("Project cover path contained an empty segment");
+  if (!segment) throw new Error("Cover image path contained an empty segment");
   return segment;
 }
 
@@ -182,8 +187,8 @@ export async function storeProjectCover(input: {
   hackathonSlug: string;
   projectSlug: string;
 }, fetcher: typeof fetch = fetch) {
-  await ensureProjectCoversBucket();
-  const image = await downloadProjectCover(input.sourceUrl, fetcher);
+  await ensureCoverBucket(PROJECT_COVERS_BUCKET);
+  const image = await downloadDevpostCover(input.sourceUrl, fetcher);
 
   const path = [
     safePathSegment(input.hackathonSlug),
@@ -198,6 +203,28 @@ export async function storeProjectCover(input: {
       upsert: true,
     });
   if (error) throw new Error(`Could not store project cover ${path}: ${error.message}`);
+
+  return { path, fetchedAt: new Date().toISOString() };
+}
+
+export async function storeHackathonCover(input: {
+  sourceUrl: string;
+  hackathonSlug: string;
+}, fetcher: typeof fetch = fetch) {
+  await ensureCoverBucket(HACKATHON_COVERS_BUCKET);
+  const image = await downloadDevpostCover(input.sourceUrl, fetcher);
+  const path = [
+    safePathSegment(input.hackathonSlug),
+    `cover.${image.extension}`,
+  ].join("/");
+  const { error } = await getSupabaseAdmin().storage
+    .from(HACKATHON_COVERS_BUCKET)
+    .upload(path, image.bytes, {
+      cacheControl: "3600",
+      contentType: image.contentType,
+      upsert: true,
+    });
+  if (error) throw new Error(`Could not store hackathon cover ${path}: ${error.message}`);
 
   return { path, fetchedAt: new Date().toISOString() };
 }

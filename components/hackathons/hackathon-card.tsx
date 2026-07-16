@@ -1,4 +1,5 @@
 import { CalendarDays, Database, FolderKanban } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import type { EventStatus, HackathonListItem, IndexingStatus } from "@/lib/data/hackathons";
 
@@ -45,11 +46,20 @@ export function HackathonCard({ hackathon }: { hackathon: HackathonListItem }) {
     >
       <div className="flex items-center justify-center border-b border-border p-5 md:border-r md:border-b-0">
         <div
-          className="grid aspect-square w-full max-w-24 place-items-center text-xl font-bold tracking-[-0.04em] text-white shadow-sm"
+          className="relative grid aspect-square w-full max-w-24 place-items-center overflow-hidden text-xl font-bold tracking-[-0.04em] text-white shadow-sm"
           style={{ backgroundColor: "#25a993" }}
-          aria-hidden="true"
         >
-          {initials}
+          {hackathon.coverImageUrl ? (
+            <Image
+              src={hackathon.coverImageUrl}
+              alt={`${hackathon.name} cover`}
+              fill
+              sizes="96px"
+              className="object-cover transition-transform duration-300 group-hover:scale-[1.025]"
+            />
+          ) : (
+            <span aria-hidden="true">{initials}</span>
+          )}
         </div>
       </div>
 

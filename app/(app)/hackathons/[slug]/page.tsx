@@ -1,5 +1,6 @@
 import { ChevronRight, ExternalLink, FolderKanban } from "lucide-react";
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProjectGrid } from "@/components/projects/project-grid";
@@ -12,7 +13,13 @@ type PageProps = { params: Promise<{ slug: string }> };
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const hackathon = await getHackathonBySlug(slug);
-  return { title: hackathon ? `${hackathon.name} | HackStack` : "Hackathon | HackStack" };
+  if (!hackathon) return { title: "Hackathon | HackStack" };
+  return {
+    title: `${hackathon.name} | HackStack`,
+    openGraph: hackathon.coverImageUrl
+      ? { images: [{ url: hackathon.coverImageUrl, alt: `${hackathon.name} cover` }] }
+      : undefined,
+  };
 }
 
 export default async function HackathonPage({ params }: PageProps) {
@@ -41,8 +48,18 @@ export default async function HackathonPage({ params }: PageProps) {
 
       <section className="flex flex-col gap-6 border-b border-dashed border-border pb-8 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex items-start gap-4">
-          <div className="grid size-12 shrink-0 place-items-center bg-[#25a993] text-sm font-bold text-white">
-            {initials}
+          <div className="relative grid size-12 shrink-0 place-items-center overflow-hidden bg-[#25a993] text-sm font-bold text-white">
+            {hackathon.coverImageUrl ? (
+              <Image
+                src={hackathon.coverImageUrl}
+                alt={`${hackathon.name} cover`}
+                fill
+                sizes="48px"
+                className="object-cover"
+              />
+            ) : (
+              <span aria-hidden="true">{initials}</span>
+            )}
           </div>
           <div>
             <p className="text-xs font-medium text-blue-600 dark:text-blue-400">{hackathon.organizer ?? "Organizer unavailable"}</p>
