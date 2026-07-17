@@ -12,14 +12,16 @@ import {
   parseProjectPage,
 } from "./devpost";
 import { fetchHtml, hackathonUrlGuard, projectUrlGuard } from "./fetch";
+import { IMPORT_LIMITS, type ImportLimit } from "./import-limits";
 import { storeHackathonCover, storeProjectCover } from "./project-images";
 import {
   ingestProjectGithubRepositories,
   type GithubIngestionResult,
 } from "@/lib/github/ingest";
 
-export const IMPORT_LIMITS = [5, 10, 20] as const;
-export type ImportLimit = (typeof IMPORT_LIMITS)[number];
+export { IMPORT_LIMITS, type ImportLimit } from "./import-limits";
+
+const MAX_GALLERY_PAGES = 1000;
 
 export type ImportProgress =
   | { type: "gallery"; discovered: number; total: number }
@@ -164,7 +166,9 @@ async function upsertProjects(hackathonId: string, scraped: ScrapeResult[]) {
 export async function importHackathon(inputUrl: string, options: ImportOptions = {}) {
   const limit = options.limit ?? 20;
   const concurrency = options.concurrency ?? 4;
-  if (!IMPORT_LIMITS.includes(limit)) throw new Error("Import limit must be 5, 10, or 20");
+  if (!IMPORT_LIMITS.some((candidate) => candidate === limit)) {
+    throw new Error("Import limit must be 5, 10, 20, or all");
+  }
   if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > 8) {
     throw new Error("Concurrency must be an integer between 1 and 8");
   }
@@ -218,33 +222,44 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
 
     const cards: GalleryProject[] = [];
     const seen = new Set<string>();
+    const visitedGalleryUrls = new Set([source.galleryUrl]);
     let html = firstGalleryHtml;
     let page = 1;
 
-    while (cards.length < limit) {
+    while (limit === "all" || cards.length < limit) {
       const parsed = parseGalleryPage(html);
       for (const card of parsed.projects) {
         if (!seen.has(card.devpostUrl)) {
           seen.add(card.devpostUrl);
           cards.push(card);
         }
-        if (cards.length === limit) break;
+        if (limit !== "all" && cards.length === limit) break;
       }
       options.onProgress?.({
         type: "gallery",
         discovered: cards.length,
-        total: Math.min(limit, metadata.projectCount),
+        total: limit === "all"
+          ? Math.max(cards.length, metadata.projectCount)
+          : Math.min(limit, metadata.projectCount),
       });
 
-      if (!parsed.nextHref || cards.length >= limit) break;
+      if (!parsed.nextHref || (limit !== "all" && cards.length >= limit)) break;
       page += 1;
-      if (page > 10) throw new Error("Gallery pagination exceeded the safety limit");
+      if (page > MAX_GALLERY_PAGES) {
+        throw new Error(`Gallery pagination exceeded ${MAX_GALLERY_PAGES} pages`);
+      }
       const nextUrl = new URL(parsed.nextHref, source.galleryUrl);
-      html = await fetchHtml(nextUrl.toString(), galleryGuard);
+      nextUrl.hash = "";
+      const nextUrlString = nextUrl.toString();
+      if (visitedGalleryUrls.has(nextUrlString)) {
+        throw new Error(`Gallery pagination repeated ${nextUrlString}`);
+      }
+      visitedGalleryUrls.add(nextUrlString);
+      html = await fetchHtml(nextUrlString, galleryGuard);
     }
 
     if (cards.length === 0) throw new Error("No public projects were found in this gallery");
-    const selectedCards = cards.slice(0, limit);
+    const selectedCards = limit === "all" ? cards : cards.slice(0, limit);
     let detailFailures = 0;
     let completed = 0;
     const scraped = await mapConcurrent(selectedCards, concurrency, async (card) => {

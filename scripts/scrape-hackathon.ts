@@ -1,10 +1,11 @@
 import { config } from "dotenv";
+import { parseImportLimit, type ImportLimit } from "../lib/scraper/import-limits";
 
 config({ path: ".env.local", quiet: true });
 config({ quiet: true });
 
 function usage(): never {
-  console.error("Usage: npm run scrape:hackathon -- <hackathon-url> [--limit 5|10|20]");
+  console.error("Usage: npm run scrape:hackathon -- <hackathon-url> [--limit 5|10|20|all]");
   process.exit(1);
 }
 
@@ -13,20 +14,21 @@ async function main() {
   const url = args[0];
   if (!url) usage();
 
-  let limit = 20;
+  let limit: ImportLimit = 20;
   for (let index = 1; index < args.length; index += 1) {
     if (args[index] !== "--limit" || !args[index + 1]) usage();
-    limit = Number.parseInt(args[index + 1], 10);
+    const parsedLimit = parseImportLimit(args[index + 1]);
+    if (parsedLimit === null) usage();
+    limit = parsedLimit;
     index += 1;
   }
-  if (![5, 10, 20].includes(limit)) usage();
 
   const { importHackathon } = await import("../lib/scraper/import-hackathon");
   const { databaseClient } = await import("../db");
 
   try {
     const result = await importHackathon(url, {
-      limit: limit as 5 | 10 | 20,
+      limit,
       onProgress(progress) {
         if (progress.type === "gallery") {
           console.log(`Discovered ${progress.discovered}/${progress.total} projects`);

@@ -13,7 +13,16 @@ prints the local value.
 npm run scrape:hackathon -- https://example-hackathon.devpost.com/ --limit 20
 ```
 
-The limit must be `5`, `10`, or `20` and defaults to `20`. The command upserts
+Use `--limit all` to follow Devpost gallery pagination until every public
+project in the hackathon has been discovered:
+
+```bash
+npm run scrape:hackathon -- https://example-hackathon.devpost.com/ --limit all
+```
+
+The limit must be `5`, `10`, `20`, or `all` and defaults to `20`. Full imports
+can take a long time and consume substantial GitHub API quota because repository
+ingestion runs after every Devpost project is persisted. The command upserts
 the hackathon and projects, so it is safe to rerun to refresh public metadata.
 Project cover images are downloaded only from approved Devpost CDN hosts,
 validated as JPEG, PNG, or WebP files up to 5 MiB, and uploaded to the public

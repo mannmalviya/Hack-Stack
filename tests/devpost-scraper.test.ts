@@ -7,6 +7,7 @@ import {
   parseHackathonPage,
   parseProjectPage,
 } from "../lib/scraper/devpost";
+import { parseImportLimit } from "../lib/scraper/import-limits";
 
 const galleryHtml = `
   <meta property="og:image" content="https://cdn.example.com/hackathon-cover.png">
@@ -42,6 +43,15 @@ test("normalizes only Devpost hackathon URLs", () => {
   });
   assert.throws(() => normalizeHackathonUrl("https://example.com/project-gallery"));
   assert.throws(() => normalizeHackathonUrl("http://example-hack.devpost.com"));
+});
+
+test("accepts bounded and all-project CLI import limits", () => {
+  assert.equal(parseImportLimit("5"), 5);
+  assert.equal(parseImportLimit("20"), 20);
+  assert.equal(parseImportLimit("all"), "all");
+  assert.equal(parseImportLimit("ALL"), "all");
+  assert.equal(parseImportLimit("21"), null);
+  assert.equal(parseImportLimit("20projects"), null);
 });
 
 test("parses event metadata and gallery cards", () => {
