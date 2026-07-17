@@ -30,13 +30,19 @@ async function main() {
       onProgress(progress) {
         if (progress.type === "gallery") {
           console.log(`Discovered ${progress.discovered}/${progress.total} projects`);
-        } else {
+        } else if (progress.type === "project") {
           const issues = [
             progress.detailFailed ? "detail fetch failed" : null,
             progress.imageFailed ? "cover storage failed" : null,
           ].filter(Boolean);
           const suffix = issues.length > 0 ? ` (${issues.join("; ")})` : "";
           console.log(`[${progress.completed}/${progress.total}] ${progress.name}${suffix}`);
+        } else {
+          const repository = progress.repository ? ` (${progress.repository})` : "";
+          const error = progress.error ? `: ${progress.error}` : "";
+          console.log(
+            `[GitHub ${progress.completed}/${progress.total}] ${progress.name}${repository} — ${progress.status}${error}`,
+          );
         }
       },
     });

@@ -13,6 +13,10 @@ import {
 } from "./devpost";
 import { fetchHtml, hackathonUrlGuard, projectUrlGuard } from "./fetch";
 import { storeHackathonCover, storeProjectCover } from "./project-images";
+import {
+  ingestProjectGithubRepositories,
+  type GithubIngestionResult,
+} from "@/lib/github/ingest";
 
 export const IMPORT_LIMITS = [5, 10, 20] as const;
 export type ImportLimit = (typeof IMPORT_LIMITS)[number];
@@ -27,6 +31,15 @@ export type ImportProgress =
       failed: boolean;
       detailFailed: boolean;
       imageFailed: boolean;
+    }
+  | {
+      type: "github";
+      completed: number;
+      total: number;
+      name: string;
+      status: GithubIngestionResult["status"];
+      repository: string | null;
+      error: string | null;
     };
 
 type ImportOptions = {
@@ -81,6 +94,11 @@ type ScrapeResult = {
 
 async function upsertProjects(hackathonId: string, scraped: ScrapeResult[]) {
   const now = new Date().toISOString();
+  const persisted: Array<{
+    id: string;
+    name: string;
+    githubUrl: string | null;
+  }> = [];
   await db.transaction(async (tx) => {
     for (const result of scraped) {
       const { project } = result;
@@ -103,7 +121,7 @@ async function upsertProjects(hackathonId: string, scraped: ScrapeResult[]) {
         builtWithData: project.builtWithData,
         updatedAt: now,
       };
-      await tx
+      const [stored] = await tx
         .insert(projects)
         .values(values)
         .onConflictDoUpdate({
@@ -131,9 +149,16 @@ async function upsertProjects(hackathonId: string, scraped: ScrapeResult[]) {
               coverImageFetchedAt: result.coverImageFetchedAt,
             } : {}),
           },
+        })
+        .returning({
+          id: projects.id,
+          name: projects.name,
+          githubUrl: projects.githubUrl,
         });
+      persisted.push(stored);
     }
   });
+  return persisted;
 }
 
 export async function importHackathon(inputUrl: string, options: ImportOptions = {}) {
@@ -267,8 +292,33 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
       };
     });
 
-    await upsertProjects(hackathon.id, scraped);
-    const status = detailFailures > 0 || imageFailures > 0 ? "partial" : "succeeded";
+    const persistedProjects = await upsertProjects(hackathon.id, scraped);
+    const githubProjects = persistedProjects.filter(
+      (project): project is typeof project & { githubUrl: string } => Boolean(project.githubUrl),
+    );
+    let completedGithubProjects = 0;
+    const githubResults = await ingestProjectGithubRepositories(githubProjects, {
+      onProjectComplete(result) {
+        completedGithubProjects += 1;
+        options.onProgress?.({
+          type: "github",
+          completed: completedGithubProjects,
+          total: githubProjects.length,
+          name: result.projectName,
+          status: result.status,
+          repository: result.repository,
+          error: result.error,
+        });
+      },
+    });
+    const githubFailures = githubResults.filter((result) => result.status === "failed").length;
+    const githubPartials = githubResults.filter((result) => result.status === "partial").length;
+    const status = detailFailures > 0
+      || imageFailures > 0
+      || githubFailures > 0
+      || githubPartials > 0
+      ? "partial"
+      : "succeeded";
     const completedAt = new Date().toISOString();
     await db
       .update(hackathons)
@@ -286,6 +336,9 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
       imported: scraped.length,
       failedDetails: detailFailures,
       failedImages: imageFailures,
+      githubRepositories: githubResults.length,
+      failedGithubRepositories: githubFailures,
+      partialGithubRepositories: githubPartials,
       availableProjects: metadata.projectCount,
     };
   } catch (error) {
