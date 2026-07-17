@@ -207,6 +207,14 @@ export async function storeProjectCover(input: {
   return { path, fetchedAt: new Date().toISOString() };
 }
 
+export async function removeProjectCover(path: string | null) {
+  if (!path) return;
+  const { error } = await getSupabaseAdmin().storage
+    .from(PROJECT_COVERS_BUCKET)
+    .remove([path]);
+  if (error) throw new Error(`Could not remove project cover ${path}: ${error.message}`);
+}
+
 export async function storeHackathonCover(input: {
   sourceUrl: string;
   hackathonSlug: string;

@@ -5,6 +5,7 @@ import {
   formatIndexedProjectCount,
   getIndexCoverage,
   getIsFullyIndexed,
+  getIsProjectIndexed,
 } from "../lib/index-coverage";
 
 test("derives coverage independently from the import job outcome", () => {
@@ -19,6 +20,16 @@ test("only treats complete coverage after a successful import as fully indexed",
   assert.equal(getIsFullyIndexed("succeeded", 20, 400), false);
   assert.equal(getIsFullyIndexed("partial", 400, 400), false);
   assert.equal(getIsFullyIndexed("running", 400, 400), false);
+});
+
+test("counts succeeded and partial projects as indexed only after completion", () => {
+  const completedAt = "2026-07-17T12:00:00.000Z";
+
+  assert.equal(getIsProjectIndexed("succeeded", completedAt), true);
+  assert.equal(getIsProjectIndexed("partial", completedAt), true);
+  assert.equal(getIsProjectIndexed("failed", completedAt), false);
+  assert.equal(getIsProjectIndexed("pending", completedAt), false);
+  assert.equal(getIsProjectIndexed("succeeded", null), false);
 });
 
 test("formats indexed and available project counts together", () => {

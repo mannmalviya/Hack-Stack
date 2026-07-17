@@ -32,11 +32,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function HackathonPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
   const requestedView = (await searchParams).view;
-  const showProjects = (Array.isArray(requestedView) ? requestedView[0] : requestedView) === "projects";
+  const view = Array.isArray(requestedView) ? requestedView[0] : requestedView;
+  const activeView = view === "projects" || view === "hackers" ? view : "insights";
+  const showProjects = activeView === "projects";
+  const showHackerInsights = activeView === "hackers";
   const [hackathon, projects, insights] = await Promise.all([
     getHackathonBySlug(slug),
     showProjects ? getProjectsByHackathon(slug) : Promise.resolve(null),
-    showProjects ? Promise.resolve(null) : getHackathonInsights(slug),
+    activeView === "insights" ? getHackathonInsights(slug) : Promise.resolve(null),
   ]);
 
   if (!hackathon) notFound();
@@ -96,14 +99,14 @@ export default async function HackathonPage({ params, searchParams }: PageProps)
       <nav aria-label="Hackathon views" className="flex border-b border-border font-mono text-xs uppercase tracking-[0.14em]">
         <Link
           href={`/hackathons/${slug}`}
-          aria-current={showProjects ? undefined : "page"}
+          aria-current={activeView === "insights" ? "page" : undefined}
           className={`border-b-2 px-4 py-3 font-medium transition-colors ${
-            showProjects
-              ? "border-transparent text-muted hover:text-foreground"
-              : "border-accent text-foreground"
+            activeView === "insights"
+              ? "border-accent text-foreground"
+              : "border-transparent text-muted hover:text-foreground"
           }`}
         >
-          Insights
+          Hackathon Insights
         </Link>
         <Link
           href={`/hackathons/${slug}?view=projects`}
@@ -115,6 +118,17 @@ export default async function HackathonPage({ params, searchParams }: PageProps)
           }`}
         >
           Projects
+        </Link>
+        <Link
+          href={`/hackathons/${slug}?view=hackers`}
+          aria-current={showHackerInsights ? "page" : undefined}
+          className={`border-b-2 px-4 py-3 font-medium transition-colors ${
+            showHackerInsights
+              ? "border-accent text-foreground"
+              : "border-transparent text-muted hover:text-foreground"
+          }`}
+        >
+          Hackers Insights
         </Link>
       </nav>
 
@@ -128,6 +142,11 @@ export default async function HackathonPage({ params, searchParams }: PageProps)
             <p className="hidden font-mono text-[10px] uppercase tracking-[0.14em] text-muted sm:block">Imported from Devpost</p>
           </div>
           <ProjectGrid projects={projects} hackathonSlug={slug} />
+        </section>
+      ) : showHackerInsights ? (
+        <section aria-labelledby="hackers-insights-heading" className="border border-dashed border-border px-6 py-16 text-center">
+          <h2 id="hackers-insights-heading" className="text-xl font-semibold tracking-[-0.03em]">Hackers Insights</h2>
+          <p className="mt-2 text-xs text-muted">This view is ready for the insights we plan next.</p>
         </section>
       ) : insights ? (
         <HackathonInsightsOverview insights={insights} hackathonSlug={slug} />

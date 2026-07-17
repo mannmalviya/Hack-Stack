@@ -1,6 +1,10 @@
 import { GitBranch, Layers3 } from "lucide-react";
 import Link from "next/link";
 
+import {
+  FailedIngestionLink,
+  FailedIngestionReview,
+} from "@/components/hackathons/failed-ingestion-review";
 import { TechnologyList } from "@/components/hackathons/technology-list";
 import { AgentLogo } from "@/components/icons/agent-logos";
 import { AnimatedBar } from "@/components/motion/animated-bar";
@@ -40,6 +44,48 @@ function CoverageCard({
         <AnimatedNumber value={value} />
       </p>
       <p className="mt-2 font-mono text-[11px] text-muted">{detail}</p>
+    </div>
+  );
+}
+
+function SubmittedProjectsCard({
+  indexed,
+  available,
+  failed,
+  partial,
+}: {
+  indexed: number;
+  available: number | null;
+  failed: number;
+  partial: number;
+}) {
+  return (
+    <div className="border-t-2 border-t-accent bg-surface p-5">
+      <div className="flex items-start justify-between gap-2">
+        <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
+          Submitted projects
+        </span>
+        <span className="text-muted/60"><Layers3 size={14} /></span>
+      </div>
+      <p className="mt-5 flex items-baseline gap-2 font-semibold tabular-nums tracking-[-0.04em]">
+        <AnimatedNumber value={indexed} className="text-5xl" />
+        {available !== null ? (
+          <span className="text-2xl text-muted">
+            / <AnimatedNumber value={available} />
+          </span>
+        ) : null}
+      </p>
+      <p className="mt-2 font-mono text-[11px] text-muted">
+        {available === null ? `${indexed} indexed` : "Projects indexed with usable data"}
+      </p>
+      {failed > 0 || partial > 0 ? (
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px]">
+          {failed > 0 ? <FailedIngestionLink count={failed} /> : null}
+          {partial > 0 ? (
+            <span className="text-amber-700 dark:text-amber-400">{partial} partial</span>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -84,8 +130,7 @@ export function HackathonInsightsOverview({
   hackathonSlug: string;
 }) {
   const { coverage } = insights;
-  const ingestionIssueCount = coverage.partialIngestionProjects + coverage.failedIngestionProjects;
-  const coverageLabel = `Based on ${coverage.usableRepositoryProjects} of ${coverage.totalProjects} projects with usable repository data.`;
+  const coverageLabel = `Based on ${coverage.usableRepositoryProjects} of ${coverage.indexedProjectCount} indexed projects with usable repository data.`;
 
   return (
     <div className="space-y-12">
@@ -98,24 +143,19 @@ export function HackathonInsightsOverview({
             description="A coverage-aware view of the submissions and the source code currently indexed."
           />
           <div className="grid gap-px border border-border bg-border sm:grid-cols-2">
-            <CoverageCard
-              icon={<Layers3 size={14} />}
-              label="Submitted projects"
-              value={coverage.totalProjects}
-              detail="Indexed from Devpost"
+            <SubmittedProjectsCard
+              indexed={coverage.indexedProjectCount}
+              available={coverage.availableProjectCount}
+              failed={coverage.failedIngestionProjects}
+              partial={coverage.partialIngestionProjects}
             />
             <CoverageCard
               icon={<GitBranch size={14} />}
               label="GitHub linked"
               value={coverage.githubLinkedProjects}
-              detail={`${coverage.totalProjects > 0 ? Math.round((coverage.githubLinkedProjects / coverage.totalProjects) * 100) : 0}% of projects`}
+              detail={`${coverage.indexedProjectCount > 0 ? Math.round((coverage.githubLinkedProjects / coverage.indexedProjectCount) * 100) : 0}% of indexed projects`}
             />
           </div>
-          {coverage.partialIngestionProjects > 0 || coverage.failedIngestionProjects > 0 ? (
-            <p className="mt-3 border-l-2 border-amber-500/70 bg-amber-500/5 px-3 py-2 text-xs text-muted">
-              Latest ingestion outcomes include {coverage.partialIngestionProjects} partial and {coverage.failedIngestionProjects} failed {ingestionIssueCount === 1 ? "project" : "projects"}. Existing repository data may reflect the last usable snapshot.
-            </p>
-          ) : null}
         </Reveal>
       </section>
 
@@ -270,6 +310,8 @@ export function HackathonInsightsOverview({
           )}
         </Reveal>
       </section>
+
+      <FailedIngestionReview projects={insights.failedProjects} />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { asc, count, desc, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq, isNotNull } from "drizzle-orm";
 
 import { db } from "@/db";
 import { hackathons, projects } from "@/db/schema";
@@ -85,7 +85,7 @@ const hackathonSelection = {
   startsAt: hackathons.startsAt,
   endsAt: hackathons.endsAt,
   availableProjectCount: hackathons.projectCount,
-  indexedProjectCount: count(projects.id),
+  indexedProjectCount: count(projects.ingestionCompletedAt),
   indexingStatus: hackathons.indexingStatus,
   indexingStage: hackathons.indexingStage,
   indexingProgressCompleted: hackathons.indexingProgressCompleted,
@@ -170,7 +170,10 @@ export async function getProjectsByHackathon(slug: string): Promise<ProjectListI
     })
     .from(projects)
     .innerJoin(hackathons, eq(projects.hackathonId, hackathons.id))
-    .where(eq(hackathons.devpostSlug, slug))
+    .where(and(
+      eq(hackathons.devpostSlug, slug),
+      isNotNull(projects.ingestionCompletedAt),
+    ))
     .orderBy(desc(projects.isWinner), asc(projects.name));
 
   return rows.map((row) => ({
@@ -209,6 +212,7 @@ export async function getFeaturedProjects(limit = 6): Promise<FeaturedProject[]>
     })
     .from(projects)
     .innerJoin(hackathons, eq(projects.hackathonId, hackathons.id))
+    .where(isNotNull(projects.ingestionCompletedAt))
     .orderBy(desc(projects.isWinner), desc(projects.updatedAt))
     .limit(Math.max(1, Math.min(limit, 12)));
 

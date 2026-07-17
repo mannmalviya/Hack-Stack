@@ -1,6 +1,7 @@
 import { CalendarDays, Database, FolderKanban, LoaderCircle } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { HackathonStageProgress } from "@/components/hackathons/hackathon-stage-progress";
 import type {
   HackathonListItem,
   IndexingStage,
@@ -99,7 +100,7 @@ export function HackathonCard({ hackathon, index }: { hackathon: HackathonListIt
               aria-live="polite"
             >
               <LoaderCircle size={12} className="animate-spin" aria-hidden="true" />
-              {runningLabel}{progress ? ` ${progress}` : ""}
+              {runningLabel}
             </span>
           ) : (
             <span className={`inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.14em] ${
@@ -135,7 +136,11 @@ export function HackathonCard({ hackathon, index }: { hackathon: HackathonListIt
         </p>
         <p className="flex items-center gap-2 font-mono text-[11px] text-muted">
           {isRunning ? (
-            <LoaderCircle size={13} className="shrink-0 animate-spin text-accent-text" aria-hidden="true" />
+            <HackathonStageProgress
+              stage={hackathon.indexingStage}
+              completed={hackathon.indexingProgressCompleted}
+              total={hackathon.indexingProgressTotal}
+            />
           ) : (
             <Database size={13} className="shrink-0" />
           )}

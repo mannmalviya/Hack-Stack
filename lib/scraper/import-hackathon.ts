@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import { hackathons, projects } from "@/db/schema";
@@ -13,7 +13,11 @@ import {
 } from "./devpost";
 import { fetchHtml, hackathonUrlGuard, projectUrlGuard } from "./fetch";
 import { IMPORT_LIMITS, type ImportLimit } from "./import-limits";
-import { storeHackathonCover, storeProjectCover } from "./project-images";
+import { shouldProcessProject } from "./incremental-import";
+import {
+  storeHackathonCover,
+  storeProjectCover,
+} from "./project-images";
 import {
   ingestProjectGithubRepositories,
   type GithubIngestionResult,
@@ -86,24 +90,41 @@ async function mapConcurrent<T, R>(
   return results;
 }
 
+const DETAIL_FAILURE_MESSAGE = "Devpost project page could not be fetched";
+const ERROR_DETAIL_LIMIT = 2000;
+
 type ScrapeResult = {
   project: ScrapedProject;
-  detailFetched: boolean;
-  coverStored: boolean;
+  detailFailed: boolean;
+  imageFailed: boolean;
   coverImagePath: string | null;
   coverImageFetchedAt: string | null;
 };
 
+type StoredProject = {
+  id: string;
+  name: string;
+  githubUrl: string | null;
+};
+
 async function upsertProjects(hackathonId: string, scraped: ScrapeResult[]) {
   const now = new Date().toISOString();
-  const persisted: Array<{
-    id: string;
-    name: string;
-    githubUrl: string | null;
-  }> = [];
+  const persisted: StoredProject[] = [];
   await db.transaction(async (tx) => {
     for (const result of scraped) {
       const { project } = result;
+      // A failed detail fetch leaves only gallery-card data. Keep the row so it
+      // can be reviewed and retried on the next import; GitHub-linked projects
+      // stay `pending` until repository ingestion finalizes their status.
+      const ingestion = result.detailFailed
+        ? {
+            status: "failed",
+            completedAt: null as string | null,
+            error: DETAIL_FAILURE_MESSAGE as string | null,
+          }
+        : project.githubUrl
+          ? { status: "pending", completedAt: null as string | null, error: null as string | null }
+          : { status: "succeeded", completedAt: now as string | null, error: null as string | null };
       const values = {
         hackathonId,
         devpostUrl: project.devpostUrl,
@@ -120,6 +141,9 @@ async function upsertProjects(hackathonId: string, scraped: ScrapeResult[]) {
         isWinner: project.isWinner,
         winningTrack: project.winningTrack,
         teamData: project.teamData,
+        ingestionCompletedAt: ingestion.completedAt,
+        ingestionStatus: ingestion.status,
+        ingestionError: ingestion.error,
         builtWithData: project.builtWithData,
         updatedAt: now,
       };
@@ -128,29 +152,7 @@ async function upsertProjects(hackathonId: string, scraped: ScrapeResult[]) {
         .values(values)
         .onConflictDoUpdate({
           target: [projects.hackathonId, projects.devpostSlug],
-          // Transient detail/image failures preserve fields captured by an
-          // earlier successful run while still refreshing available card data.
-          set: {
-            devpostUrl: project.devpostUrl,
-            name: project.name,
-            tagline: project.tagline,
-            coverImageSourceUrl: project.coverImageSourceUrl,
-            updatedAt: now,
-            ...(result.detailFetched ? {
-              description: project.description,
-              demoUrl: project.demoUrl,
-              videoUrl: project.videoUrl,
-              githubUrl: project.githubUrl,
-              isWinner: project.isWinner,
-              winningTrack: project.winningTrack,
-              teamData: project.teamData,
-              builtWithData: project.builtWithData,
-            } : {}),
-            ...(result.coverStored ? {
-              coverImagePath: result.coverImagePath,
-              coverImageFetchedAt: result.coverImageFetchedAt,
-            } : {}),
-          },
+          set: values,
         })
         .returning({
           id: projects.id,
@@ -202,11 +204,14 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
         updatedAt: now,
       },
     })
-    .returning({ id: hackathons.id });
+    .returning({
+      id: hackathons.id,
+      coverImagePath: hackathons.coverImagePath,
+    });
 
   let imageFailures = 0;
   try {
-    if (metadata.coverImageSourceUrl) {
+    if (metadata.coverImageSourceUrl && !hackathon.coverImagePath) {
       try {
         const storedCover = await storeHackathonCover({
           sourceUrl: metadata.coverImageSourceUrl,
@@ -276,18 +281,36 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
 
     if (cards.length === 0) throw new Error("No public projects were found in this gallery");
     const selectedCards = limit === "all" ? cards : cards.slice(0, limit);
+    const existingProjects = await db
+      .select({
+        devpostSlug: projects.devpostSlug,
+        ingestionCompletedAt: projects.ingestionCompletedAt,
+      })
+      .from(projects)
+      .where(and(
+        eq(projects.hackathonId, hackathon.id),
+        inArray(projects.devpostSlug, selectedCards.map((card) => card.devpostSlug)),
+      ));
+    const existingBySlug = new Map(
+      existingProjects.map((project) => [project.devpostSlug, project]),
+    );
+    // Only reprocess projects that are missing or did not complete (failed rows
+    // are kept in place and updated by the upsert below, preserving their id).
+    const projectsToProcess = selectedCards.filter((card) =>
+      shouldProcessProject(existingBySlug.get(card.devpostSlug))
+    );
     await db
       .update(hackathons)
       .set({
         indexingStage: "scraping_projects",
         indexingProgressCompleted: 0,
-        indexingProgressTotal: selectedCards.length,
+        indexingProgressTotal: projectsToProcess.length,
         updatedAt: new Date().toISOString(),
       })
       .where(eq(hackathons.id, hackathon.id));
     let detailFailures = 0;
     let completed = 0;
-    const scraped = await mapConcurrent(selectedCards, concurrency, async (card) => {
+    const scraped = await mapConcurrent(projectsToProcess, concurrency, async (card) => {
       let detailFailed = false;
       let imageFailed = false;
       let project: ScrapedProject;
@@ -301,7 +324,7 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
       }
 
       let storedCover: { path: string; fetchedAt: string } | null = null;
-      if (project.coverImageSourceUrl) {
+      if (!detailFailed && project.coverImageSourceUrl) {
         try {
           storedCover = await storeProjectCover({
             sourceUrl: project.coverImageSourceUrl,
@@ -325,7 +348,7 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
       options.onProgress?.({
         type: "project",
         completed,
-        total: selectedCards.length,
+        total: projectsToProcess.length,
         name: card.name,
         failed: detailFailed || imageFailed,
         detailFailed,
@@ -333,13 +356,16 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
       });
       return {
         project,
-        detailFetched: !detailFailed,
-        coverStored: Boolean(storedCover),
+        detailFailed,
+        imageFailed,
         coverImagePath: storedCover?.path ?? null,
         coverImageFetchedAt: storedCover?.fetchedAt ?? null,
       };
     });
 
+    // Persist every scraped project — including detail failures — so nothing is
+    // dropped. A transient cover-image failure keeps the project with a null
+    // cover rather than discarding it.
     const persistedProjects = await upsertProjects(hackathon.id, scraped);
     const githubProjects = persistedProjects.filter(
       (project): project is typeof project & { githubUrl: string } => Boolean(project.githubUrl),
@@ -376,8 +402,38 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
         });
       },
     });
+    // Finalize each GitHub-linked project in place. Failures keep the row with a
+    // null completion timestamp (so the next import retries it) and record the
+    // reason for manual review; partial/succeeded runs mark the row complete.
+    for (const result of githubResults) {
+      const finalizedAt = new Date().toISOString();
+      if (result.status === "failed") {
+        await db
+          .update(projects)
+          .set({
+            ingestionStatus: "failed",
+            ingestionError: (result.error ?? "GitHub ingestion failed").slice(0, ERROR_DETAIL_LIMIT),
+            updatedAt: finalizedAt,
+          })
+          .where(eq(projects.id, result.projectId));
+      } else {
+        await db
+          .update(projects)
+          .set({
+            ingestionStatus: result.status,
+            ingestionError: result.status === "partial"
+              ? result.warnings.join("\n").slice(0, ERROR_DETAIL_LIMIT) || null
+              : null,
+            ingestionCompletedAt: finalizedAt,
+            updatedAt: finalizedAt,
+          })
+          .where(eq(projects.id, result.projectId));
+      }
+    }
     const githubFailures = githubResults.filter((result) => result.status === "failed").length;
     const githubPartials = githubResults.filter((result) => result.status === "partial").length;
+    // Usable (imported) projects exclude both detail-scrape and GitHub failures.
+    const importedProjects = persistedProjects.length - detailFailures - githubFailures;
     const status = detailFailures > 0
       || imageFailures > 0
       || githubFailures > 0
@@ -401,7 +457,7 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
       hackathonId: hackathon.id,
       hackathon: metadata.name,
       status,
-      imported: scraped.length,
+      imported: importedProjects,
       failedDetails: detailFailures,
       failedImages: imageFailures,
       githubRepositories: githubResults.length,

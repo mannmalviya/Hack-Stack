@@ -20,10 +20,13 @@ project in the hackathon has been discovered:
 npm run scrape:hackathon -- https://example-hackathon.devpost.com/ --limit all
 ```
 
-The limit must be `5`, `10`, `20`, or `all` and defaults to `20`. Full imports
-can take a long time and consume substantial GitHub API quota because repository
-ingestion runs after every Devpost project is persisted. The command upserts
-the hackathon and projects, so it is safe to rerun to refresh public metadata.
+The limit must be `5`, `10`, `20`, or `all` and defaults to `20`. The command is
+incremental. On a rerun it walks the gallery to discover submissions, skips every
+project whose Devpost and GitHub data were previously stored successfully, and
+runs the complete pipeline only for new or previously failed projects. A project
+is persisted only when its detail page, cover handling, and GitHub ingestion all
+succeed. Failed or partial projects are removed instead of retaining incomplete
+project, repository, dependency, commit, file, or cover records.
 Project cover images are downloaded only from approved Devpost CDN hosts,
 validated as JPEG, PNG, or WebP files up to 5 MiB, and uploaded to the public
 `project-covers` Supabase Storage bucket. The database retains the original

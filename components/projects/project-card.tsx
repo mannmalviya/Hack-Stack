@@ -1,6 +1,6 @@
 import { ArrowUpRight } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
+import { ProjectCoverImage } from "@/components/projects/project-cover-image";
 import type { ProjectListItem } from "@/lib/data/hackathons";
 
 export function ProjectCard({
@@ -22,13 +22,7 @@ export function ProjectCard({
     >
       <div className="relative aspect-[16/9] overflow-hidden border-b border-border">
         {project.coverImageUrl ? (
-          <Image
-            src={project.coverImageUrl}
-            alt={`${project.name} project cover`}
-            fill
-            sizes="(max-width: 767px) 100vw, (max-width: 1279px) 50vw, 33vw"
-            className="object-cover transition-transform duration-300 group-hover:scale-[1.025]"
-          />
+          <ProjectCoverImage src={project.coverImageUrl} alt={`${project.name} project cover`} />
         ) : (
           <div className="absolute inset-0 grid place-items-center bg-[radial-gradient(circle_at_30%_20%,color-mix(in_srgb,var(--accent)_22%,transparent),transparent_48%)]">
             <span className="text-3xl font-semibold tracking-[-0.06em] text-accent-text/50" aria-hidden="true">

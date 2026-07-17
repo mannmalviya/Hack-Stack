@@ -2,11 +2,11 @@ import "server-only";
 
 import {
   and,
+  asc,
   eq,
   ilike,
   inArray,
   isNotNull,
-  max,
   or,
   sql,
 } from "drizzle-orm";
@@ -19,7 +19,6 @@ import {
   repositoryCommits,
   repositoryDependencies,
   repositoryFiles,
-  repositoryIngestionRuns,
 } from "@/db/schema";
 import {
   detectAgentsFromCommitMetadata,
@@ -36,14 +35,23 @@ import {
   type ProjectCodebaseSize,
   type TechnologyUsage,
 } from "@/lib/insights/hackathon-analytics";
+import { getIsProjectIndexed } from "@/lib/index-coverage";
 
 export type HackathonInsightCoverage = {
-  totalProjects: number;
+  availableProjectCount: number | null;
+  indexedProjectCount: number;
   githubLinkedProjects: number;
   usableRepositoryProjects: number;
   partialIngestionProjects: number;
   failedIngestionProjects: number;
   totalSourceBytes: number;
+};
+
+export type FailedProjectInsight = {
+  name: string;
+  slug: string;
+  githubUrl: string | null;
+  reason: string | null;
 };
 
 export type HackathonInsights = {
@@ -54,9 +62,8 @@ export type HackathonInsights = {
   codebaseSizes: ProjectCodebaseSize[];
   medianCodebaseSizeBytes: number;
   projectsWithoutSourceData: number;
+  failedProjects: FailedProjectInsight[];
 };
-
-type LatestRunStatus = "queued" | "running" | "succeeded" | "partial" | "failed";
 
 function asStringArray(value: unknown) {
   return Array.isArray(value)
@@ -65,25 +72,52 @@ function asStringArray(value: unknown) {
 }
 
 export async function getHackathonInsights(slug: string): Promise<HackathonInsights> {
-  const projectRows = await db
-    .select({
-      id: projects.id,
-      name: projects.name,
-      slug: projects.devpostSlug,
-      githubUrl: projects.githubUrl,
-      builtWithData: projects.builtWithData,
-    })
-    .from(projects)
-    .innerJoin(hackathons, eq(projects.hackathonId, hackathons.id))
-    .where(eq(hackathons.devpostSlug, slug));
+  const [allProjectRows, hackathonRow] = await Promise.all([
+    db
+      .select({
+        id: projects.id,
+        name: projects.name,
+        slug: projects.devpostSlug,
+        githubUrl: projects.githubUrl,
+        builtWithData: projects.builtWithData,
+        ingestionStatus: projects.ingestionStatus,
+        ingestionCompletedAt: projects.ingestionCompletedAt,
+        ingestionError: projects.ingestionError,
+      })
+      .from(projects)
+      .innerJoin(hackathons, eq(projects.hackathonId, hackathons.id))
+      .where(eq(hackathons.devpostSlug, slug))
+      .orderBy(asc(projects.name)),
+    db
+      .select({
+        availableProjectCount: hackathons.projectCount,
+      })
+      .from(hackathons)
+      .where(eq(hackathons.devpostSlug, slug))
+      .limit(1),
+  ]);
+  const projectRows = allProjectRows.filter((project) =>
+    getIsProjectIndexed(project.ingestionStatus, project.ingestionCompletedAt)
+  );
+  // Failed projects are kept (never deleted) and surfaced for manual review.
+  const failedProjects = allProjectRows
+    .filter((project) => project.ingestionStatus === "failed")
+    .map((project) => ({
+      name: project.name,
+      slug: project.slug,
+      githubUrl: project.githubUrl,
+      reason: project.ingestionError,
+    }));
+  const availableProjectCount = hackathonRow[0]?.availableProjectCount ?? null;
 
   const emptyInsights: HackathonInsights = {
     coverage: {
-      totalProjects: 0,
+      availableProjectCount,
+      indexedProjectCount: 0,
       githubLinkedProjects: 0,
       usableRepositoryProjects: 0,
       partialIngestionProjects: 0,
-      failedIngestionProjects: 0,
+      failedIngestionProjects: failedProjects.length,
       totalSourceBytes: 0,
     },
     languages: [],
@@ -92,20 +126,13 @@ export async function getHackathonInsights(slug: string): Promise<HackathonInsig
     codebaseSizes: [],
     medianCodebaseSizeBytes: 0,
     projectsWithoutSourceData: 0,
+    failedProjects,
   };
   if (projectRows.length === 0) return emptyInsights;
 
   const projectIds = projectRows.map((project) => project.id);
-  const latestRunIds = db
-    .select({
-      projectRepositoryId: repositoryIngestionRuns.projectRepositoryId,
-      latestRunId: max(repositoryIngestionRuns.id).as("latest_run_id"),
-    })
-    .from(repositoryIngestionRuns)
-    .groupBy(repositoryIngestionRuns.projectRepositoryId)
-    .as("latest_repository_run_ids");
 
-  const [fileRows, dependencyRows, agentFileRows, agentCommitRows, latestRunRows] = await Promise.all([
+  const [fileRows, dependencyRows, agentFileRows, agentCommitRows] = await Promise.all([
     db
       .select({
         projectId: projectRepositories.projectId,
@@ -202,21 +229,6 @@ export async function getHackathonInsights(slug: string): Promise<HackathonInsig
           ilike(repositoryCommits.authorEmail, "%openai.com%"),
         ),
       )),
-    db
-      .select({
-        projectId: projectRepositories.projectId,
-        status: repositoryIngestionRuns.status,
-      })
-      .from(projectRepositories)
-      .leftJoin(
-        latestRunIds,
-        eq(projectRepositories.id, latestRunIds.projectRepositoryId),
-      )
-      .leftJoin(
-        repositoryIngestionRuns,
-        eq(repositoryIngestionRuns.id, latestRunIds.latestRunId),
-      )
-      .where(inArray(projectRepositories.projectId, projectIds)),
   ]);
 
   const projectLookup = new Map(
@@ -256,22 +268,15 @@ export async function getHackathonInsights(slug: string): Promise<HackathonInsig
       }))),
   ].filter((signal) => usableProjectIds.has(signal.projectId));
 
-  const statusesByProject = new Map<string, Set<LatestRunStatus>>();
-  for (const run of latestRunRows) {
-    if (!run.status) continue;
-    const statuses = statusesByProject.get(run.projectId) ?? new Set<LatestRunStatus>();
-    statuses.add(run.status as LatestRunStatus);
-    statusesByProject.set(run.projectId, statuses);
-  }
-  const partialIngestionProjects = [...statusesByProject.values()]
-    .filter((statuses) => statuses.has("partial")).length;
-  const failedIngestionProjects = [...statusesByProject.values()]
-    .filter((statuses) => statuses.has("failed")).length;
+  const partialIngestionProjects = projectRows
+    .filter((project) => project.ingestionStatus === "partial").length;
+  const failedIngestionProjects = failedProjects.length;
   const totalSourceBytes = codebaseSizes.reduce((total, project) => total + project.sizeBytes, 0);
 
   return {
     coverage: {
-      totalProjects: projectRows.length,
+      availableProjectCount,
+      indexedProjectCount: projectRows.length,
       githubLinkedProjects: projectRows.filter((project) => project.githubUrl?.trim()).length,
       usableRepositoryProjects: usableProjectIds.size,
       partialIngestionProjects,
@@ -294,5 +299,6 @@ export async function getHackathonInsights(slug: string): Promise<HackathonInsig
     codebaseSizes,
     medianCodebaseSizeBytes: median(codebaseSizes.map((project) => project.sizeBytes)),
     projectsWithoutSourceData: Math.max(0, projectRows.length - codebaseSizes.length),
+    failedProjects,
   };
 }

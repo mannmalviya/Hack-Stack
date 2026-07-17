@@ -41,6 +41,14 @@ export const projects = pgTable(
     // can evolve without requiring a column for every scraped field.
     teamData: jsonb("team_data").default([]).notNull(),
     builtWithData: jsonb("built_with_data").default([]).notNull(),
+    ingestionCompletedAt: timestamp("ingestion_completed_at", {
+      withTimezone: true,
+      mode: "string",
+    }),
+    // Outcome of the most recent import attempt. `failed` rows are kept (never
+    // deleted) so judges can review them, and are retried on the next import.
+    ingestionStatus: text("ingestion_status").default("pending").notNull(),
+    ingestionError: text("ingestion_error"),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
       .defaultNow()
       .notNull(),
@@ -69,6 +77,11 @@ export const projects = pgTable(
     check(
       "projects_winner_track_check",
       sql`(${table.isWinner} and nullif(btrim(${table.winningTrack}), '') is not null) or (not ${table.isWinner} and ${table.winningTrack} is null)`,
+    ),
+    // Ingestion state machine mirrored on each project row.
+    check(
+      "projects_ingestion_status_check",
+      sql`${table.ingestionStatus} in ('pending', 'succeeded', 'partial', 'failed')`,
     ),
   ],
 ).enableRLS();
