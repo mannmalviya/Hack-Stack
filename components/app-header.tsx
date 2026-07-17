@@ -15,7 +15,7 @@ export function AppHeader() {
             <Plus size={14} /> Request hackathon
           </Link>
           <ThemeToggle />
-          <Link href="/sign-in" aria-label="Sign in" className="flex h-8 items-center gap-1.5 rounded-md px-2 text-xs font-medium text-[#5f6368] transition-colors hover:bg-black/4 hover:text-[#202124] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/35 dark:text-zinc-400 dark:hover:bg-white/8 dark:hover:text-zinc-100">
+          <Link href="/login" aria-label="Sign in" className="flex h-8 items-center gap-1.5 rounded-md px-2 text-xs font-medium text-[#5f6368] transition-colors hover:bg-black/4 hover:text-[#202124] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/35 dark:text-zinc-400 dark:hover:bg-white/8 dark:hover:text-zinc-100">
             <LogIn size={14} /><span className="hidden lg:inline">Sign in</span>
           </Link>
         </div>

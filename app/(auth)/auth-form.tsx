@@ -1,0 +1,179 @@
+"use client";
+
+import Link from "next/link";
+import { useState } from "react";
+
+import { createClient } from "@/lib/supabase/client";
+
+type AuthMode = "login" | "signup";
+type Provider = "google" | "github";
+
+type AuthFormProps = {
+  callbackError?: string;
+  mode: AuthMode;
+  nextPath?: string;
+};
+
+const callbackErrorMessages: Record<string, string> = {
+  configuration:
+    "Authentication is not configured. Please contact the HackStack team.",
+  oauth: "We couldn't complete your sign-in. Please try again.",
+};
+
+function GoogleMark() {
+  return (
+    <svg aria-hidden="true" className="size-5" viewBox="0 0 24 24">
+      <path
+        d="M21.35 12.27c0-.75-.07-1.47-.2-2.16H12v4.09h5.23a4.47 4.47 0 0 1-1.94 2.93v2.65h3.41c2-1.84 3.15-4.56 3.15-7.51Z"
+        fill="#4285F4"
+      />
+      <path
+        d="M12 21.75c2.62 0 4.82-.87 6.42-2.36l-3.41-2.65c-.94.63-2.15 1-3.01 1-2.32 0-4.29-1.57-4.99-3.68H3.49v2.73A9.7 9.7 0 0 0 12 21.75Z"
+        fill="#34A853"
+      />
+      <path
+        d="M7.01 14.06A5.8 5.8 0 0 1 6.73 12c0-.71.1-1.4.28-2.06V7.21H3.49A9.7 9.7 0 0 0 2.25 12c0 1.74.47 3.37 1.24 4.79l3.52-2.73Z"
+        fill="#FBBC05"
+      />
+      <path
+        d="M12 6.27c1.43 0 2.71.49 3.72 1.45l2.79-2.79C16.82 3.35 14.62 2.25 12 2.25a9.7 9.7 0 0 0-8.51 4.96l3.52 2.73c.7-2.11 2.67-3.67 4.99-3.67Z"
+        fill="#EA4335"
+      />
+    </svg>
+  );
+}
+
+function GitHubMark() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="size-5 fill-current"
+      viewBox="0 0 24 24"
+    >
+      <path d="M12 2.25a9.75 9.75 0 0 0-3.08 19c.49.09.67-.21.67-.47v-1.7c-2.73.59-3.3-1.16-3.3-1.16-.44-1.13-1.09-1.43-1.09-1.43-.89-.61.07-.6.07-.6.98.07 1.5 1.01 1.5 1.01.88 1.49 2.29 1.06 2.85.81.09-.63.34-1.06.63-1.3-2.18-.25-4.48-1.09-4.48-4.87 0-1.08.39-1.96 1.01-2.65-.1-.25-.44-1.26.1-2.62 0 0 .82-.26 2.68 1.01a9.3 9.3 0 0 1 4.88 0c1.86-1.27 2.68-1.01 2.68-1.01.54 1.36.2 2.37.1 2.62.63.69 1.01 1.57 1.01 2.65 0 3.79-2.3 4.61-4.49 4.86.35.3.67.87.67 1.76v2.61c0 .26.18.57.68.47A9.75 9.75 0 0 0 12 2.25Z" />
+    </svg>
+  );
+}
+
+function safeNextPath(nextPath?: string) {
+  return nextPath?.startsWith("/") && !nextPath.startsWith("//")
+    ? nextPath
+    : "/hackathons";
+}
+
+export function AuthForm({ callbackError, mode, nextPath }: AuthFormProps) {
+  const [loadingProvider, setLoadingProvider] = useState<Provider | null>(
+    null,
+  );
+  const [error, setError] = useState<string | null>(
+    callbackError ? callbackErrorMessages[callbackError] : null,
+  );
+  const isLogin = mode === "login";
+  const destination = safeNextPath(nextPath);
+  const alternateAuthPath = isLogin ? "/signup" : "/login";
+  const alternateAuthHref =
+    destination === "/hackathons"
+      ? alternateAuthPath
+      : `${alternateAuthPath}?next=${encodeURIComponent(destination)}`;
+
+  async function continueWith(provider: Provider) {
+    setError(null);
+    setLoadingProvider(provider);
+
+    try {
+      const callbackUrl = new URL("/callback", window.location.origin);
+      callbackUrl.searchParams.set("next", destination);
+
+      const { data, error: signInError } = await createClient().auth.signInWithOAuth({
+        provider,
+        options: { redirectTo: callbackUrl.toString() },
+      });
+
+      if (signInError) {
+        throw signInError;
+      }
+
+      if (!data.url) {
+        throw new Error("Unable to start authentication. Please try again.");
+      }
+
+      window.location.assign(data.url);
+    } catch (authError) {
+      setError(
+        authError instanceof Error
+          ? authError.message
+          : "Unable to start authentication. Please try again.",
+      );
+      setLoadingProvider(null);
+    }
+  }
+
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-zinc-50 px-6 py-12 text-zinc-950">
+      <section
+        className="w-full max-w-sm"
+        aria-labelledby={`${mode}-heading`}
+      >
+        <div className="mb-8 text-center">
+          <p className="text-sm font-semibold tracking-[0.18em] text-violet-700 uppercase">
+            HackStack
+          </p>
+          <h1
+            id={`${mode}-heading`}
+            className="mt-4 text-3xl font-semibold tracking-tight"
+          >
+            {isLogin ? "Welcome back" : "Create your account"}
+          </h1>
+          <p className="mt-3 text-sm leading-6 text-zinc-600">
+            {isLogin
+              ? "Sign in to continue reviewing hackathon projects with clear evidence."
+              : "Start reviewing hackathon projects with evidence that is easy to inspect."}
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <div className="space-y-3">
+            <button
+              type="button"
+              onClick={() => continueWith("google")}
+              disabled={loadingProvider !== null}
+              className="flex h-11 w-full items-center justify-center gap-3 rounded-lg border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-800 transition-colors hover:bg-zinc-50 focus-visible:ring-2 focus-visible:ring-violet-600 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <GoogleMark />
+              {loadingProvider === "google"
+                ? "Connecting to Google..."
+                : "Continue with Google"}
+            </button>
+            <button
+              type="button"
+              onClick={() => continueWith("github")}
+              disabled={loadingProvider !== null}
+              className="flex h-11 w-full items-center justify-center gap-3 rounded-lg bg-zinc-950 px-4 text-sm font-medium text-white transition-colors hover:bg-zinc-800 focus-visible:ring-2 focus-visible:ring-violet-600 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <GitHubMark />
+              {loadingProvider === "github"
+                ? "Connecting to GitHub..."
+                : "Continue with GitHub"}
+            </button>
+          </div>
+
+          {error ? (
+            <p className="mt-4 text-center text-sm text-red-600" role="alert">
+              {error}
+            </p>
+          ) : null}
+        </div>
+
+        <p className="mt-6 text-center text-sm text-zinc-600">
+          {isLogin ? "New to HackStack?" : "Already have an account?"}{" "}
+          <Link
+            href={alternateAuthHref}
+            className="font-medium text-violet-700 underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-violet-600 focus-visible:ring-offset-2 focus-visible:outline-none"
+          >
+            {isLogin ? "Create an account" : "Log in"}
+          </Link>
+        </p>
+      </section>
+    </main>
+  );
+}

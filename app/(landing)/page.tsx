@@ -28,7 +28,7 @@ export default async function LandingPage() {
           </Link>
           <div className="flex items-center gap-2">
             <Link href="/hackathons" className="hidden px-3 py-2 text-xs font-medium text-white/65 transition-colors hover:text-white sm:block">Explore hackathons</Link>
-            <Link href="/sign-in" className="border border-white/20 bg-white/7 px-3.5 py-2 text-xs font-medium text-white backdrop-blur transition-colors hover:bg-white/12">Sign in</Link>
+            <Link href="/login" className="border border-white/20 bg-white/7 px-3.5 py-2 text-xs font-medium text-white backdrop-blur transition-colors hover:bg-white/12">Sign in</Link>
           </div>
         </nav>
 

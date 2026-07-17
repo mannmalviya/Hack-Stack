@@ -2,6 +2,7 @@
   "name": "hack-stack",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -11,9 +12,11 @@
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
     "scrape:hackathon": "tsx scripts/scrape-hackathon.ts",
+    "scrape:devpost": "node scripts/scrape-devpost-project.ts",
     "test": "tsx --test tests/**/*.test.ts"
   },
   "dependencies": {
+    "@supabase/ssr": "0.12.3",
     "@supabase/supabase-js": "2.110.7",
     "cheerio": "^1.2.0",
     "clsx": "^2.1.1",
