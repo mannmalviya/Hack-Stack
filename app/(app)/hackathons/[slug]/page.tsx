@@ -3,13 +3,18 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { HackathonInsightsOverview } from "@/components/hackathons/hackathon-insights";
 import { ProjectGrid } from "@/components/projects/project-grid";
 import { getHackathonBySlug, getProjectsByHackathon } from "@/lib/data/hackathons";
+import { getHackathonInsights } from "@/lib/data/hackathon-insights";
 import { formatIndexedProjectCount, indexCoverageLabels } from "@/lib/index-coverage";
 
 export const dynamic = "force-dynamic";
 
-type PageProps = { params: Promise<{ slug: string }> };
+type PageProps = {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ view?: string | string[] }>;
+};
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
@@ -23,11 +28,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function HackathonPage({ params }: PageProps) {
+export default async function HackathonPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
-  const [hackathon, projects] = await Promise.all([
+  const requestedView = (await searchParams).view;
+  const showProjects = (Array.isArray(requestedView) ? requestedView[0] : requestedView) === "projects";
+  const [hackathon, projects, insights] = await Promise.all([
     getHackathonBySlug(slug),
-    getProjectsByHackathon(slug),
+    showProjects ? getProjectsByHackathon(slug) : Promise.resolve(null),
+    showProjects ? Promise.resolve(null) : getHackathonInsights(slug),
   ]);
 
   if (!hackathon) notFound();
@@ -82,16 +90,45 @@ export default async function HackathonPage({ params }: PageProps) {
         </div>
       </section>
 
-      <section aria-labelledby="projects-heading">
-        <div className="mb-5 flex items-end justify-between gap-4">
-          <div>
-            <h2 id="projects-heading" className="text-base font-semibold">Submitted projects</h2>
-            <p className="mt-1 text-xs text-muted">Browse the submission metadata currently indexed from Devpost.</p>
+      <nav aria-label="Hackathon views" className="flex border-b border-border">
+        <Link
+          href={`/hackathons/${slug}`}
+          aria-current={showProjects ? undefined : "page"}
+          className={`border-b-2 px-4 py-3 text-sm font-medium transition-colors ${
+            showProjects
+              ? "border-transparent text-muted hover:text-foreground"
+              : "border-foreground text-foreground"
+          }`}
+        >
+          Overview
+        </Link>
+        <Link
+          href={`/hackathons/${slug}?view=projects`}
+          aria-current={showProjects ? "page" : undefined}
+          className={`border-b-2 px-4 py-3 text-sm font-medium transition-colors ${
+            showProjects
+              ? "border-foreground text-foreground"
+              : "border-transparent text-muted hover:text-foreground"
+          }`}
+        >
+          Projects
+        </Link>
+      </nav>
+
+      {showProjects && projects ? (
+        <section aria-labelledby="projects-heading">
+          <div className="mb-5 flex items-end justify-between gap-4">
+            <div>
+              <h2 id="projects-heading" className="text-base font-semibold">Submitted projects</h2>
+              <p className="mt-1 text-xs text-muted">Browse the submission metadata currently indexed from Devpost.</p>
+            </div>
+            <p className="hidden text-xs text-muted sm:block">Imported from Devpost</p>
           </div>
-          <p className="hidden text-xs text-muted sm:block">Imported from Devpost</p>
-        </div>
-        <ProjectGrid projects={projects} hackathonSlug={slug} />
-      </section>
+          <ProjectGrid projects={projects} hackathonSlug={slug} />
+        </section>
+      ) : insights ? (
+        <HackathonInsightsOverview insights={insights} hackathonSlug={slug} />
+      ) : null}
     </div>
   );
 }
