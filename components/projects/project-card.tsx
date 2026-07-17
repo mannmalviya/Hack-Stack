@@ -1,14 +1,26 @@
+import { ArrowUpRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import type { ProjectListItem } from "@/lib/data/hackathons";
 
-export function ProjectCard({ project, hackathonSlug }: { project: ProjectListItem; hackathonSlug: string }) {
+export function ProjectCard({
+  project,
+  hackathonSlug,
+  index,
+  label,
+}: {
+  project: ProjectListItem;
+  hackathonSlug: string;
+  index: number;
+  /** Replaces the index numeral in the caption, e.g. the hackathon name on the landing grid. */
+  label?: string;
+}) {
   return (
     <Link
       href={`/hackathons/${hackathonSlug}/${project.slug}`}
-      className="group overflow-hidden border border-border bg-surface transition-[border-color,box-shadow] duration-200 hover:border-foreground/25 hover:shadow-[0_10px_28px_rgba(0,0,0,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 dark:hover:border-zinc-600 dark:hover:shadow-[0_10px_28px_rgba(0,0,0,0.22)]"
+      className="group flex h-full flex-col overflow-hidden bg-surface transition-colors duration-200 hover:bg-foreground/[0.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
     >
-      <div className="relative aspect-[16/9] overflow-hidden border-b border-border bg-[#e7eceb] dark:bg-[#111817]">
+      <div className="relative aspect-[16/9] overflow-hidden border-b border-border">
         {project.coverImageUrl ? (
           <Image
             src={project.coverImageUrl}
@@ -18,18 +30,28 @@ export function ProjectCard({ project, hackathonSlug }: { project: ProjectListIt
             className="object-cover transition-transform duration-300 group-hover:scale-[1.025]"
           />
         ) : (
-          <div className="absolute inset-0 grid place-items-center bg-[radial-gradient(circle_at_30%_20%,rgba(37,169,147,0.24),transparent_48%),linear-gradient(135deg,#eef3f2,#dce6e3)] dark:bg-[radial-gradient(circle_at_30%_20%,rgba(37,169,147,0.2),transparent_48%),linear-gradient(135deg,#16201e,#0e1211)]">
-            <span className="text-3xl font-semibold tracking-[-0.06em] text-[#238f7d]/55 dark:text-[#65c9b8]/45" aria-hidden="true">
+          <div className="absolute inset-0 grid place-items-center bg-[radial-gradient(circle_at_30%_20%,color-mix(in_srgb,var(--accent)_22%,transparent),transparent_48%)]">
+            <span className="text-3xl font-semibold tracking-[-0.06em] text-accent-text/50" aria-hidden="true">
               {project.name.slice(0, 2).toUpperCase()}
             </span>
           </div>
         )}
       </div>
 
-      <div className="p-4">
-        <h2 className="text-base font-semibold tracking-[-0.025em] text-foreground">
-          {project.name}
-        </h2>
+      <div className="flex flex-1 items-start justify-between gap-3 p-4">
+        <div className="min-w-0">
+          <p className="truncate font-mono text-[10px] uppercase tracking-[0.1em] tabular-nums text-muted" aria-hidden={label ? undefined : "true"}>
+            {label ?? String(index + 1).padStart(2, "0")}
+          </p>
+          <h2 className="mt-1 truncate text-base font-semibold tracking-[-0.025em] text-foreground">
+            {project.name}
+          </h2>
+        </div>
+        <ArrowUpRight
+          size={15}
+          className="mt-1 shrink-0 text-muted transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-foreground"
+          aria-hidden="true"
+        />
       </div>
     </Link>
   );

@@ -74,6 +74,11 @@ test("technology summaries count distinct projects and separate claimed-only usa
       { projectId: "one", technology: react },
       { projectId: "three", technology: react },
     ],
+    projectLookup: new Map([
+      ["one", { name: "One", slug: "one" }],
+      ["two", { name: "Two", slug: "two" }],
+      ["three", { name: "Three", slug: "three" }],
+    ]),
   });
 
   assert.deepEqual(usage, [{
@@ -82,7 +87,30 @@ test("technology summaries count distinct projects and separate claimed-only usa
     codeDetectedProjects: 2,
     claimedOnlyProjects: 1,
     totalProjects: 3,
+    projects: [
+      { id: "one", name: "One", slug: "one", evidence: "detected" },
+      { id: "three", name: "Three", slug: "three", evidence: "detected" },
+      { id: "two", name: "Two", slug: "two", evidence: "claimed" },
+    ],
   }]);
+});
+
+test("technology summaries drop unresolvable projects from lists but keep counts", () => {
+  const python = { name: "Python", category: "language" as const };
+  const usage = summarizeTechnologyUsage({
+    category: "language",
+    claimed: [],
+    detected: [
+      { projectId: "known", technology: python },
+      { projectId: "unknown", technology: python },
+    ],
+    projectLookup: new Map([["known", { name: "Known", slug: "known" }]]),
+  });
+
+  assert.equal(usage[0].codeDetectedProjects, 2);
+  assert.deepEqual(usage[0].projects, [
+    { id: "known", name: "Known", slug: "known", evidence: "detected" },
+  ]);
 });
 
 test("agent summaries deduplicate signals and use repository coverage as denominator", () => {
@@ -112,4 +140,3 @@ test("codebase sizes combine repository and language rows per project", () => {
   assert.equal(median(sizes.map((project) => project.sizeBytes)), 300);
   assert.equal(median([]), 0);
 });
-

@@ -1,3 +1,4 @@
+import { Reveal } from "@/components/motion/reveal";
 import { ProjectCard } from "@/components/projects/project-card";
 import type { ProjectListItem } from "@/lib/data/hackathons";
 
@@ -12,9 +13,11 @@ export function ProjectGrid({ projects, hackathonSlug }: { projects: ProjectList
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-      {projects.map((project) => (
-        <ProjectCard key={project.slug} project={project} hackathonSlug={hackathonSlug} />
+    <div className="grid grid-cols-1 gap-px border border-border bg-border md:grid-cols-2 xl:grid-cols-3">
+      {projects.map((project, index) => (
+        <Reveal key={project.slug} delay={Math.min(index * 0.04, 0.35)} y={10} className="h-full">
+          <ProjectCard project={project} hackathonSlug={hackathonSlug} index={index} />
+        </Reveal>
       ))}
     </div>
   );

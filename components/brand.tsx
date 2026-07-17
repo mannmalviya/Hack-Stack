@@ -4,9 +4,10 @@ export function Brand() {
   return (
     <Link
       href="/hackathons"
-      className="group block shrink-0 rounded-sm text-[17px] font-semibold tracking-[-0.035em] text-[#202124] outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-blue-500/35 dark:text-zinc-100"
+      className="group inline-flex shrink-0 items-baseline gap-2 text-[17px] font-semibold tracking-[-0.04em] text-foreground outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-accent/50"
       aria-label="HackStack hackathons"
     >
+      <span aria-hidden="true" className="size-2.5 self-center bg-accent" />
       HackStack
     </Link>
   );

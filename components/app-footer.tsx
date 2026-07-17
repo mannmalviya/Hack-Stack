@@ -5,8 +5,8 @@ function DiscordIcon() {
   return (
     <svg
       viewBox="0 0 24 24"
-      width="17"
-      height="17"
+      width="15"
+      height="15"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.7"
@@ -24,18 +24,25 @@ function DiscordIcon() {
 
 export function AppFooter() {
   return (
-    <footer className="border-t border-border bg-surface">
-      <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 sm:flex-row sm:items-end sm:justify-between sm:px-6 lg:px-8">
-        <div className="space-y-3">
-          <Brand />
-          <p className="max-w-sm text-xs leading-5 text-muted">Evidence-backed project review for hackathon judges.</p>
-          <p className="text-[11px] text-muted">© {new Date().getFullYear()} HackStack</p>
-        </div>
-        <div className="space-y-2 sm:text-right">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">Connect</p>
-          <Link href="https://discord.gg/u85Y2RJmPN" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm text-muted transition-colors hover:text-foreground">
+    <footer className="border-t border-border">
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+          <div className="space-y-3">
+            <Brand />
+            <p className="max-w-sm text-xs leading-5 text-muted">Evidence-backed project review for hackathon judges.</p>
+          </div>
+          <Link
+            href="https://discord.gg/u85Y2RJmPN"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.14em] text-muted transition-colors hover:text-foreground"
+          >
             <DiscordIcon /> Discord
           </Link>
+        </div>
+        <div className="mt-8 flex flex-col gap-2 border-t border-border pt-4 font-mono text-[10px] uppercase tracking-[0.14em] text-muted sm:flex-row sm:items-center sm:justify-between">
+          <span>© {new Date().getFullYear()} HackStack</span>
+          <span>Evidence, not impressions</span>
         </div>
       </div>
     </footer>

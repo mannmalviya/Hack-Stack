@@ -1,8 +1,15 @@
-import { Bot, Braces, DatabaseZap, GitBranch, Layers3 } from "lucide-react";
+import { GitBranch, Layers3 } from "lucide-react";
 import Link from "next/link";
 
+import { TechnologyList } from "@/components/hackathons/technology-list";
+import { AgentLogo } from "@/components/icons/agent-logos";
+import { AnimatedBar } from "@/components/motion/animated-bar";
+import { AnimatedNumber } from "@/components/motion/animated-number";
+import { Reveal } from "@/components/motion/reveal";
 import type { HackathonInsights } from "@/lib/data/hackathon-insights";
-import type { TechnologyUsage } from "@/lib/insights/hackathon-analytics";
+
+const CLAIMED_STRIPES =
+  "repeating-linear-gradient(135deg, transparent, transparent 3px, var(--background) 3px, var(--background) 5px)";
 
 function formatBytes(bytes: number) {
   if (bytes === 0) return "0 B";
@@ -20,17 +27,19 @@ function CoverageCard({
 }: {
   icon: React.ReactNode;
   label: string;
-  value: string;
+  value: number;
   detail: string;
 }) {
   return (
-    <div className="border border-border bg-surface p-4">
-      <div className="flex items-center gap-2 text-xs text-muted">
-        {icon}
-        <span>{label}</span>
+    <div className="border-t-2 border-t-accent bg-surface p-5">
+      <div className="flex items-start justify-between gap-2">
+        <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">{label}</span>
+        <span className="text-muted/60">{icon}</span>
       </div>
-      <p className="mt-4 text-2xl font-semibold tracking-[-0.04em]">{value}</p>
-      <p className="mt-1 text-xs text-muted">{detail}</p>
+      <p className="mt-5 text-5xl font-semibold tabular-nums tracking-[-0.04em]">
+        <AnimatedNumber value={value} />
+      </p>
+      <p className="mt-2 font-mono text-[11px] text-muted">{detail}</p>
     </div>
   );
 }
@@ -43,75 +52,26 @@ function EmptyPanel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function TechnologyList({ items }: { items: TechnologyUsage[] }) {
-  if (items.length === 0) {
-    return <EmptyPanel>No recognizable technologies were found.</EmptyPanel>;
-  }
-  const maximum = Math.max(...items.map((item) => item.totalProjects), 1);
-
-  return (
-    <div className="space-y-4" role="list">
-      {items.map((item) => {
-        const detectedShare = item.totalProjects > 0
-          ? (item.codeDetectedProjects / item.totalProjects) * 100
-          : 0;
-        return (
-          <div key={item.name} role="listitem">
-            <div className="mb-1.5 flex items-baseline justify-between gap-4 text-xs">
-              <span className="font-medium text-foreground">{item.name}</span>
-              <span className="shrink-0 text-muted">
-                {item.totalProjects} {item.totalProjects === 1 ? "project" : "projects"}
-              </span>
-            </div>
-            <div
-              className="h-2 overflow-hidden bg-zinc-100 dark:bg-zinc-900"
-              aria-label={`${item.name}: ${item.codeDetectedProjects} code-detected projects and ${item.claimedOnlyProjects} claimed-only projects`}
-            >
-              <div
-                className="flex h-full min-w-px"
-                style={{ width: `${Math.max((item.totalProjects / maximum) * 100, 1)}%` }}
-              >
-                {item.codeDetectedProjects > 0 ? (
-                  <span
-                    className="h-full bg-[#25a993]"
-                    style={{ width: `${detectedShare}%` }}
-                  />
-                ) : null}
-                {item.claimedOnlyProjects > 0 ? (
-                  <span
-                    className="h-full bg-blue-500/45"
-                    style={{
-                      width: `${100 - detectedShare}%`,
-                      backgroundImage: "repeating-linear-gradient(135deg, transparent, transparent 3px, rgba(255,255,255,.65) 3px, rgba(255,255,255,.65) 5px)",
-                    }}
-                  />
-                ) : null}
-              </div>
-            </div>
-            <p className="mt-1 text-[11px] text-muted">
-              {item.codeDetectedProjects} code-detected
-              {item.claimedOnlyProjects > 0 ? ` · ${item.claimedOnlyProjects} claimed only` : ""}
-            </p>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 function SectionHeading({
   id,
+  index,
   title,
   description,
 }: {
   id: string;
+  index: string;
   title: string;
   description: string;
 }) {
   return (
-    <div className="mb-5">
-      <h2 id={id} className="text-base font-semibold">{title}</h2>
-      <p className="mt-1 text-xs leading-5 text-muted">{description}</p>
+    <div className="mb-6">
+      <h2 id={id} className="text-xl font-semibold tracking-[-0.03em] sm:text-2xl">
+        <span className="mr-3 font-mono text-xs font-normal tabular-nums text-accent-text" aria-hidden="true">
+          {index}
+        </span>
+        {title}
+      </h2>
+      <p className="mt-2 max-w-3xl text-xs leading-5 text-muted">{description}</p>
     </div>
   );
 }
@@ -128,165 +88,187 @@ export function HackathonInsightsOverview({
   const coverageLabel = `Based on ${coverage.usableRepositoryProjects} of ${coverage.totalProjects} projects with usable repository data.`;
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-12">
       <section aria-labelledby="coverage-heading">
-        <SectionHeading
-          id="coverage-heading"
-          title="Hackathon snapshot"
-          description="A coverage-aware view of the submissions and the source code currently indexed."
-        />
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <CoverageCard
-            icon={<Layers3 size={14} />}
-            label="Submitted projects"
-            value={coverage.totalProjects.toLocaleString()}
-            detail="Indexed from Devpost"
+        <Reveal>
+          <SectionHeading
+            id="coverage-heading"
+            index="01"
+            title="Hackathon snapshot"
+            description="A coverage-aware view of the submissions and the source code currently indexed."
           />
-          <CoverageCard
-            icon={<GitBranch size={14} />}
-            label="GitHub linked"
-            value={coverage.githubLinkedProjects.toLocaleString()}
-            detail={`${coverage.totalProjects > 0 ? Math.round((coverage.githubLinkedProjects / coverage.totalProjects) * 100) : 0}% of projects`}
-          />
-          <CoverageCard
-            icon={<DatabaseZap size={14} />}
-            label="Repository data"
-            value={coverage.usableRepositoryProjects.toLocaleString()}
-            detail="Projects with recognized source files"
-          />
-          <CoverageCard
-            icon={<Braces size={14} />}
-            label="Indexed source size"
-            value={formatBytes(coverage.totalSourceBytes)}
-            detail="Recognized, non-binary source files"
-          />
-        </div>
-        {coverage.partialIngestionProjects > 0 || coverage.failedIngestionProjects > 0 ? (
-          <p className="mt-3 border-l-2 border-amber-500/70 bg-amber-500/5 px-3 py-2 text-xs text-muted">
-            Latest ingestion outcomes include {coverage.partialIngestionProjects} partial and {coverage.failedIngestionProjects} failed {ingestionIssueCount === 1 ? "project" : "projects"}. Existing repository data may reflect the last usable snapshot.
-          </p>
-        ) : null}
+          <div className="grid gap-px border border-border bg-border sm:grid-cols-2">
+            <CoverageCard
+              icon={<Layers3 size={14} />}
+              label="Submitted projects"
+              value={coverage.totalProjects}
+              detail="Indexed from Devpost"
+            />
+            <CoverageCard
+              icon={<GitBranch size={14} />}
+              label="GitHub linked"
+              value={coverage.githubLinkedProjects}
+              detail={`${coverage.totalProjects > 0 ? Math.round((coverage.githubLinkedProjects / coverage.totalProjects) * 100) : 0}% of projects`}
+            />
+          </div>
+          {coverage.partialIngestionProjects > 0 || coverage.failedIngestionProjects > 0 ? (
+            <p className="mt-3 border-l-2 border-amber-500/70 bg-amber-500/5 px-3 py-2 text-xs text-muted">
+              Latest ingestion outcomes include {coverage.partialIngestionProjects} partial and {coverage.failedIngestionProjects} failed {ingestionIssueCount === 1 ? "project" : "projects"}. Existing repository data may reflect the last usable snapshot.
+            </p>
+          ) : null}
+        </Reveal>
       </section>
 
-      <section aria-labelledby="technology-heading" className="border-t border-dashed border-border pt-8">
-        <SectionHeading
-          id="technology-heading"
-          title="Technology landscape"
-          description="Distinct project adoption, combining Devpost claims with technologies detected in source files and dependency manifests."
-        />
-        <div className="mb-6 flex flex-wrap gap-x-5 gap-y-2 text-[11px] text-muted" aria-label="Technology evidence legend">
-          <span className="inline-flex items-center gap-2">
-            <span className="size-2.5 bg-[#25a993]" /> Code-detected
-          </span>
-          <span className="inline-flex items-center gap-2">
-            <span
-              className="size-2.5 bg-blue-500/45"
-              style={{ backgroundImage: "repeating-linear-gradient(135deg, transparent, transparent 2px, rgba(255,255,255,.75) 2px, rgba(255,255,255,.75) 3px)" }}
-            /> Claimed only
-          </span>
-        </div>
-        <div className="grid gap-8 lg:grid-cols-2">
-          <div>
-            <h3 className="mb-4 text-xs font-semibold uppercase tracking-[0.12em] text-muted">Languages</h3>
-            <TechnologyList items={insights.languages} />
+      <section aria-labelledby="technology-heading" className="border-t border-border pt-10">
+        <Reveal>
+          <SectionHeading
+            id="technology-heading"
+            index="02"
+            title="Technology landscape"
+            description="Distinct project adoption, combining Devpost claims with technologies detected in source files and dependency manifests. Click a technology to see its projects."
+          />
+          <div className="mb-6 flex flex-wrap gap-2 font-mono text-[10px] uppercase tracking-[0.14em] text-muted" aria-label="Technology evidence legend">
+            <span className="inline-flex items-center gap-2 border border-border bg-surface px-2 py-1">
+              <span className="size-2.5 bg-accent" /> Code-detected
+            </span>
+            <span className="inline-flex items-center gap-2 border border-border bg-surface px-2 py-1">
+              <span
+                className="size-2.5 bg-foreground/25"
+                style={{ backgroundImage: CLAIMED_STRIPES }}
+              /> Claimed only
+            </span>
           </div>
-          <div>
-            <h3 className="mb-4 text-xs font-semibold uppercase tracking-[0.12em] text-muted">Frameworks and platforms</h3>
-            <TechnologyList items={insights.technologies} />
+          <div className="grid gap-8 lg:grid-cols-2">
+            <div>
+              <h3 className="mb-4 font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">Languages</h3>
+              <TechnologyList items={insights.languages} hackathonSlug={hackathonSlug} />
+            </div>
+            <div>
+              <h3 className="mb-4 font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">Frameworks and platforms</h3>
+              <TechnologyList items={insights.technologies} hackathonSlug={hackathonSlug} />
+            </div>
           </div>
-        </div>
+        </Reveal>
       </section>
 
-      <section aria-labelledby="agents-heading" className="border-t border-dashed border-border pt-8">
-        <SectionHeading
-          id="agents-heading"
-          title="AI coding-agent signals"
-          description={`${coverageLabel} Signals come from known repository paths and explicit commit attribution; they indicate evidence, not confirmed usage.`}
-        />
-        {insights.agentSignals.length > 0 ? (
-          <div className="space-y-4" role="list">
-            {insights.agentSignals.map((usage) => (
-              <div key={usage.agent} role="listitem" className="grid gap-2 sm:grid-cols-[10rem_1fr_7rem] sm:items-center">
-                <span className="inline-flex items-center gap-2 text-sm font-medium">
-                  <Bot size={14} className="text-[#25a993]" />
-                  {usage.agent}
-                </span>
+      <section aria-labelledby="agents-heading" className="border-t border-border pt-10">
+        <Reveal>
+          <SectionHeading
+            id="agents-heading"
+            index="03"
+            title="AI coding-agent signals"
+            description={`${coverageLabel} Signals come from known repository paths and explicit commit attribution; they indicate evidence, not confirmed usage.`}
+          />
+          {insights.agentSignals.length > 0 ? (
+            <div role="list">
+              {insights.agentSignals.map((usage, index) => (
                 <div
-                  className="h-2 overflow-hidden bg-zinc-100 dark:bg-zinc-900"
-                  aria-label={`${usage.agent}: signals in ${usage.projectCount} projects, ${usage.percentage}% of usable repositories`}
+                  key={usage.agent}
+                  role="listitem"
+                  className="grid gap-2 border-b border-border py-4 first:pt-0 last:border-b-0 last:pb-0 sm:grid-cols-[10rem_1fr_8rem] sm:items-center"
                 >
-                  <div className="h-full min-w-px bg-[#25a993]" style={{ width: `${Math.max(usage.percentage, 1)}%` }} />
+                  <span className="inline-flex items-center gap-2.5 text-sm font-medium">
+                    <AgentLogo agent={usage.agent} className="size-4 shrink-0 text-accent" />
+                    {usage.agent}
+                  </span>
+                  <div
+                    className="h-2 overflow-hidden bg-foreground/[0.06]"
+                    aria-label={`${usage.agent}: signals in ${usage.projectCount} projects, ${usage.percentage}% of usable repositories`}
+                  >
+                    <AnimatedBar
+                      percent={Math.max(usage.percentage, 1)}
+                      delay={index * 0.05}
+                      className="bg-accent"
+                    />
+                  </div>
+                  <span className="font-mono text-[11px] tabular-nums text-muted sm:text-right">
+                    {usage.projectCount} {usage.projectCount === 1 ? "project" : "projects"} · <span className="font-medium text-foreground">{usage.percentage}%</span>
+                  </span>
                 </div>
-                <span className="text-xs text-muted sm:text-right">
-                  {usage.projectCount} {usage.projectCount === 1 ? "project" : "projects"} · {usage.percentage}%
-                </span>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <EmptyPanel>
-            {coverage.usableRepositoryProjects === 0
-              ? "Run GitHub ingestion to detect coding-agent signals."
-              : "No known coding-agent signals were detected in the indexed repositories."}
-          </EmptyPanel>
-        )}
+              ))}
+            </div>
+          ) : (
+            <EmptyPanel>
+              {coverage.usableRepositoryProjects === 0
+                ? "Run GitHub ingestion to detect coding-agent signals."
+                : "No known coding-agent signals were detected in the indexed repositories."}
+            </EmptyPanel>
+          )}
+        </Reveal>
       </section>
 
-      <section aria-labelledby="size-heading" className="border-t border-dashed border-border pt-8">
-        <SectionHeading
-          id="size-heading"
-          title="Codebase size comparison"
-          description={`${coverageLabel} Size is the current indexed total of recognized, non-binary source files—not historical additions.`}
-        />
-        {insights.codebaseSizes.length > 0 ? (
-          <>
-            <div className="mb-5 grid gap-3 sm:grid-cols-3">
-              <div className="border border-border px-3 py-2 text-xs">
-                <span className="text-muted">Largest</span>
-                <p className="mt-1 truncate font-medium">{insights.codebaseSizes[0].projectName} · {formatBytes(insights.codebaseSizes[0].sizeBytes)}</p>
+      <section aria-labelledby="size-heading" className="border-t border-border pt-10">
+        <Reveal>
+          <SectionHeading
+            id="size-heading"
+            index="04"
+            title="Codebase size comparison"
+            description={`${coverageLabel} Size is the current indexed total of recognized, non-binary source files—not historical additions.`}
+          />
+          {insights.codebaseSizes.length > 0 ? (
+            <>
+              <div className="mb-6 grid gap-px border border-border bg-border sm:grid-cols-3">
+                <div className="border-t-2 border-t-accent bg-surface px-4 py-3 text-xs">
+                  <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">Largest</span>
+                  <p className="mt-1.5 truncate font-medium tabular-nums">{insights.codebaseSizes[0].projectName} · {formatBytes(insights.codebaseSizes[0].sizeBytes)}</p>
+                </div>
+                <div className="bg-surface px-4 py-3 text-xs sm:border-t-2 sm:border-t-transparent">
+                  <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">Median</span>
+                  <p className="mt-1.5 font-medium tabular-nums">{formatBytes(insights.medianCodebaseSizeBytes)}</p>
+                </div>
+                <div className="bg-surface px-4 py-3 text-xs sm:border-t-2 sm:border-t-transparent">
+                  <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">Smallest</span>
+                  <p className="mt-1.5 truncate font-medium tabular-nums">{insights.codebaseSizes.at(-1)?.projectName} · {formatBytes(insights.codebaseSizes.at(-1)?.sizeBytes ?? 0)}</p>
+                </div>
               </div>
-              <div className="border border-border px-3 py-2 text-xs">
-                <span className="text-muted">Median</span>
-                <p className="mt-1 font-medium">{formatBytes(insights.medianCodebaseSizeBytes)}</p>
-              </div>
-              <div className="border border-border px-3 py-2 text-xs">
-                <span className="text-muted">Smallest</span>
-                <p className="mt-1 truncate font-medium">{insights.codebaseSizes.at(-1)?.projectName} · {formatBytes(insights.codebaseSizes.at(-1)?.sizeBytes ?? 0)}</p>
-              </div>
-            </div>
-            <div className="space-y-3" role="list">
-              {insights.codebaseSizes.map((project, index) => {
-                const maximum = insights.codebaseSizes[0].sizeBytes;
-                const width = maximum > 0 ? (project.sizeBytes / maximum) * 100 : 0;
-                return (
-                  <div key={project.projectId} role="listitem" className="grid gap-1.5 sm:grid-cols-[minmax(9rem,15rem)_1fr_5rem] sm:items-center">
-                    <Link
-                      href={`/hackathons/${hackathonSlug}/${project.projectSlug}`}
-                      className="truncate text-xs font-medium hover:text-blue-600 hover:underline dark:hover:text-blue-400"
-                    >
-                      <span className="mr-2 tabular-nums text-muted">{index + 1}</span>
-                      {project.projectName}
-                    </Link>
+              <div className="space-y-1" role="list">
+                {insights.codebaseSizes.map((project, index) => {
+                  const maximum = insights.codebaseSizes[0].sizeBytes;
+                  const width = maximum > 0 ? (project.sizeBytes / maximum) * 100 : 0;
+                  return (
                     <div
-                      className="h-2 overflow-hidden bg-zinc-100 dark:bg-zinc-900"
-                      aria-label={`${project.projectName}: ${formatBytes(project.sizeBytes)} of recognized source files`}
+                      key={project.projectId}
+                      role="listitem"
+                      className="-mx-2 grid gap-1.5 px-2 py-1.5 transition-colors hover:bg-foreground/[0.03] sm:grid-cols-[minmax(9rem,15rem)_1fr_5rem] sm:items-center"
                     >
-                      <div className="h-full min-w-px bg-blue-500/75" style={{ width: `${Math.max(width, 0.5)}%` }} />
+                      <Link
+                        href={`/hackathons/${hackathonSlug}/${project.projectSlug}`}
+                        className="truncate text-xs font-medium hover:text-accent-text hover:underline"
+                      >
+                        <span
+                          className={`mr-2 inline-block w-5 font-mono tabular-nums ${
+                            index < 3 ? "font-semibold text-foreground" : "text-muted"
+                          }`}
+                        >
+                          {index + 1}
+                        </span>
+                        {project.projectName}
+                      </Link>
+                      <div
+                        className="h-2 overflow-hidden bg-foreground/[0.06]"
+                        aria-label={`${project.projectName}: ${formatBytes(project.sizeBytes)} of recognized source files`}
+                      >
+                        <AnimatedBar
+                          percent={Math.max(width, 0.5)}
+                          delay={Math.min(index * 0.03, 0.3)}
+                          className={index === 0 ? "bg-accent" : "bg-accent/70"}
+                        />
+                      </div>
+                      <span className="font-mono text-[11px] tabular-nums text-muted sm:text-right">{formatBytes(project.sizeBytes)}</span>
                     </div>
-                    <span className="text-xs tabular-nums text-muted sm:text-right">{formatBytes(project.sizeBytes)}</span>
-                  </div>
-                );
-              })}
-            </div>
-            {insights.projectsWithoutSourceData > 0 ? (
-              <p className="mt-5 text-xs text-muted">
-                {insights.projectsWithoutSourceData} {insights.projectsWithoutSourceData === 1 ? "project was" : "projects were"} excluded because no recognized source files are currently indexed.
-              </p>
-            ) : null}
-          </>
-        ) : (
-          <EmptyPanel>Run GitHub ingestion to compare project codebase sizes.</EmptyPanel>
-        )}
+                  );
+                })}
+              </div>
+              {insights.projectsWithoutSourceData > 0 ? (
+                <p className="mt-5 text-xs text-muted">
+                  {insights.projectsWithoutSourceData} {insights.projectsWithoutSourceData === 1 ? "project was" : "projects were"} excluded because no recognized source files are currently indexed.
+                </p>
+              ) : null}
+            </>
+          ) : (
+            <EmptyPanel>Run GitHub ingestion to compare project codebase sizes.</EmptyPanel>
+          )}
+        </Reveal>
       </section>
     </div>
   );

@@ -64,7 +64,7 @@ export function ThemeToggle() {
       type="button"
       onClick={toggleTheme}
       disabled={!mounted}
-      className="grid size-8 place-items-center rounded-lg border border-[#d5d7da] bg-[#fafafa] text-[#30343a] shadow-sm transition-colors hover:bg-[#f0f1f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30 dark:border-border dark:bg-white/5 dark:text-zinc-300 dark:hover:bg-white/10"
+      className="grid size-8 place-items-center border border-border bg-surface text-foreground transition-colors hover:bg-foreground/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
       aria-label={mounted ? `Switch to ${resolvedTheme === "dark" ? "light" : "dark"} theme` : "Toggle theme"}
     >
       {mounted && resolvedTheme === "dark" ? <Sun size={16} /> : <Moon size={16} />}

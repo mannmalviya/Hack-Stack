@@ -219,6 +219,10 @@ export async function getHackathonInsights(slug: string): Promise<HackathonInsig
       .where(inArray(projectRepositories.projectId, projectIds)),
   ]);
 
+  const projectLookup = new Map(
+    projectRows.map((project) => [project.id, { name: project.name, slug: project.slug }]),
+  );
+
   const claimedEvidence = projectRows.flatMap((project) =>
     asStringArray(project.builtWithData).flatMap((claim) => {
       const technology = normalizeClaimedTechnology(claim);
@@ -278,11 +282,13 @@ export async function getHackathonInsights(slug: string): Promise<HackathonInsig
       claimed: claimedEvidence,
       detected: detectedLanguageEvidence,
       category: "language",
+      projectLookup,
     }),
     technologies: summarizeTechnologyUsage({
       claimed: claimedEvidence,
       detected: detectedTechnologyEvidence,
       category: "technology",
+      projectLookup,
     }),
     agentSignals: summarizeAgentSignals(agentSignals, usableProjectIds.size),
     codebaseSizes,

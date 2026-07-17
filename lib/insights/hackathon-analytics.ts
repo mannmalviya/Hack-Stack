@@ -5,10 +5,20 @@ export type TechnologyMatch = {
   category: TechnologyCategory;
 };
 
+export type TechnologyEvidenceKind = "detected" | "claimed";
+
+export type TechnologyProjectRef = {
+  id: string;
+  name: string;
+  slug: string;
+  evidence: TechnologyEvidenceKind;
+};
+
 export type TechnologyUsage = TechnologyMatch & {
   codeDetectedProjects: number;
   claimedOnlyProjects: number;
   totalProjects: number;
+  projects: TechnologyProjectRef[];
 };
 
 export const AI_CODE_AGENTS = [
@@ -242,6 +252,7 @@ export function summarizeTechnologyUsage(input: {
   claimed: TechnologyEvidence[];
   detected: TechnologyEvidence[];
   category: TechnologyCategory;
+  projectLookup: Map<string, { name: string; slug: string }>;
   limit?: number;
 }): TechnologyUsage[] {
   const claimedByTechnology = new Map<string, Set<string>>();
@@ -266,12 +277,28 @@ export function summarizeTechnologyUsage(input: {
       const claimed = claimedByTechnology.get(name) ?? new Set<string>();
       const detected = detectedByTechnology.get(name) ?? new Set<string>();
       const claimedOnlyProjects = [...claimed].filter((projectId) => !detected.has(projectId)).length;
+      // Counts come from evidence; the project list only includes ids the caller can resolve.
+      const projects = [...new Set([...claimed, ...detected])]
+        .flatMap((projectId) => {
+          const project = input.projectLookup.get(projectId);
+          if (!project) return [];
+          return [{
+            id: projectId,
+            name: project.name,
+            slug: project.slug,
+            evidence: (detected.has(projectId) ? "detected" : "claimed") as TechnologyEvidenceKind,
+          }];
+        })
+        .sort((left, right) =>
+          (left.evidence === right.evidence ? 0 : left.evidence === "detected" ? -1 : 1)
+          || left.name.localeCompare(right.name));
       return {
         name,
         category: input.category,
         codeDetectedProjects: detected.size,
         claimedOnlyProjects,
         totalProjects: new Set([...claimed, ...detected]).size,
+        projects,
       };
     })
     .sort((left, right) => right.totalProjects - left.totalProjects || left.name.localeCompare(right.name))

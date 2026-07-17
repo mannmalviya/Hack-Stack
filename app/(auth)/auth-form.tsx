@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 
+import { Reveal } from "@/components/motion/reveal";
 import { createClient } from "@/lib/supabase/client";
 
 type AuthMode = "login" | "signup";
@@ -109,71 +110,71 @@ export function AuthForm({ callbackError, mode, nextPath }: AuthFormProps) {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-zinc-50 px-6 py-12 text-zinc-950">
-      <section
-        className="w-full max-w-sm"
-        aria-labelledby={`${mode}-heading`}
-      >
-        <div className="mb-8 text-center">
-          <p className="text-sm font-semibold tracking-[0.18em] text-violet-700 uppercase">
-            HackStack
-          </p>
-          <h1
-            id={`${mode}-heading`}
-            className="mt-4 text-3xl font-semibold tracking-tight"
-          >
-            {isLogin ? "Welcome back" : "Create your account"}
-          </h1>
-          <p className="mt-3 text-sm leading-6 text-zinc-600">
-            {isLogin
-              ? "Sign in to continue reviewing hackathon projects with clear evidence."
-              : "Start reviewing hackathon projects with evidence that is easy to inspect."}
-          </p>
-        </div>
-
-        <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-          <div className="space-y-3">
-            <button
-              type="button"
-              onClick={() => continueWith("google")}
-              disabled={loadingProvider !== null}
-              className="flex h-11 w-full items-center justify-center gap-3 rounded-lg border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-800 transition-colors hover:bg-zinc-50 focus-visible:ring-2 focus-visible:ring-violet-600 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+    <main className="flex min-h-screen items-center justify-center bg-background px-6 py-12 text-foreground">
+      <Reveal className="w-full max-w-sm">
+        <section aria-labelledby={`${mode}-heading`}>
+          <div className="mb-8 text-center">
+            <p className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-accent-text">
+              <span aria-hidden="true" className="size-2 bg-accent" />
+              HackStack
+            </p>
+            <h1
+              id={`${mode}-heading`}
+              className="mt-4 text-3xl font-semibold tracking-[-0.03em]"
             >
-              <GoogleMark />
-              {loadingProvider === "google"
-                ? "Connecting to Google..."
-                : "Continue with Google"}
-            </button>
-            <button
-              type="button"
-              onClick={() => continueWith("github")}
-              disabled={loadingProvider !== null}
-              className="flex h-11 w-full items-center justify-center gap-3 rounded-lg bg-zinc-950 px-4 text-sm font-medium text-white transition-colors hover:bg-zinc-800 focus-visible:ring-2 focus-visible:ring-violet-600 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <GitHubMark />
-              {loadingProvider === "github"
-                ? "Connecting to GitHub..."
-                : "Continue with GitHub"}
-            </button>
+              {isLogin ? "Welcome back" : "Create your account"}
+            </h1>
+            <p className="mt-3 text-sm leading-6 text-muted">
+              {isLogin
+                ? "Sign in to continue reviewing hackathon projects with clear evidence."
+                : "Start reviewing hackathon projects with evidence that is easy to inspect."}
+            </p>
           </div>
 
-          {error ? (
-            <p className="mt-4 text-center text-sm text-red-600" role="alert">
-              {error}
-            </p>
-          ) : null}
-        </div>
+          <div className="border border-border bg-surface p-6">
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={() => continueWith("google")}
+                disabled={loadingProvider !== null}
+                className="flex h-11 w-full items-center justify-center gap-3 border border-border bg-surface px-4 text-sm font-medium text-foreground transition-colors hover:border-foreground/40 focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <GoogleMark />
+                {loadingProvider === "google"
+                  ? "Connecting to Google..."
+                  : "Continue with Google"}
+              </button>
+              <button
+                type="button"
+                onClick={() => continueWith("github")}
+                disabled={loadingProvider !== null}
+                className="flex h-11 w-full items-center justify-center gap-3 bg-foreground px-4 text-sm font-medium text-background transition-opacity hover:opacity-85 focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <GitHubMark />
+                {loadingProvider === "github"
+                  ? "Connecting to GitHub..."
+                  : "Continue with GitHub"}
+              </button>
+            </div>
 
-        <p className="mt-6 text-center text-sm text-zinc-600">
-          {isLogin ? "New to HackStack?" : "Already have an account?"}{" "}
-          <Link
-            href={alternateAuthHref}
-            className="font-medium text-violet-700 underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-violet-600 focus-visible:ring-offset-2 focus-visible:outline-none"
-          >
-            {isLogin ? "Create an account" : "Log in"}
-          </Link>
-        </p>
-      </section>
+            {error ? (
+              <p className="mt-4 text-center text-sm text-red-600 dark:text-red-400" role="alert">
+                {error}
+              </p>
+            ) : null}
+          </div>
+
+          <p className="mt-6 text-center text-sm text-muted">
+            {isLogin ? "New to HackStack?" : "Already have an account?"}{" "}
+            <Link
+              href={alternateAuthHref}
+              className="font-medium text-accent-text underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:outline-none"
+            >
+              {isLogin ? "Create an account" : "Log in"}
+            </Link>
+          </p>
+        </section>
+      </Reveal>
     </main>
   );
 }

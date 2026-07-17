@@ -3,11 +3,14 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #fafafa;
-  --foreground: #18181b;
-  --muted: #71717a;
+  --background: #fafaf9;
+  --foreground: #141416;
+  --muted: #6e6e76;
   --border: #e4e4e7;
   --surface: #ffffff;
+  --accent: #25a993;
+  --accent-text: #147a68;
+  --grid-line: color-mix(in srgb, var(--border) 60%, transparent);
 }
 
 @theme inline {
@@ -16,20 +19,26 @@
   --color-muted: var(--muted);
   --color-border: var(--border);
   --color-surface: var(--surface);
+  --color-accent: var(--accent);
+  --color-accent-text: var(--accent-text);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
 }
 
 .dark {
-  --background: #101010;
-  --foreground: #f4f4f5;
+  --background: #0d0d0e;
+  --foreground: #f2f2f0;
   --muted: #a1a1aa;
-  --border: #2a2a2a;
-  --surface: #101010;
+  --border: #27272a;
+  --surface: #131315;
+  --accent: #25a993;
+  --accent-text: #45cdb2;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
 }
 
 button,

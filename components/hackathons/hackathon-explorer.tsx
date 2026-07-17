@@ -3,6 +3,7 @@
 import { RotateCcw } from "lucide-react";
 import { useMemo, useState } from "react";
 import { HackathonCard } from "@/components/hackathons/hackathon-card";
+import { Reveal } from "@/components/motion/reveal";
 import type { EventStatus, HackathonListItem, IndexingStatus } from "@/lib/data/hackathons";
 
 type Filters = {
@@ -34,7 +35,7 @@ function FilterOption({ label, checked, onChange }: { label: string; checked: bo
         type="checkbox"
         checked={checked}
         onChange={onChange}
-        className="size-3.5 rounded-none border-border accent-blue-600"
+        className="size-3.5 rounded-none border-border accent-accent"
       />
       {label}
     </label>
@@ -44,7 +45,7 @@ function FilterOption({ label, checked, onChange }: { label: string; checked: bo
 function FilterGroup({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <fieldset>
-      <legend className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-foreground">{title}</legend>
+      <legend className="mb-3 font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-foreground">{title}</legend>
       <div className="space-y-2.5">{children}</div>
     </fieldset>
   );
@@ -76,11 +77,11 @@ export function HackathonExplorer({ hackathons }: { hackathons: HackathonListIte
 
   return (
     <div className="grid items-start gap-8 lg:grid-cols-[210px_minmax(0,1fr)]">
-      <aside className="border-b border-dashed border-border pb-6 lg:sticky lg:top-20 lg:border-r lg:border-b-0 lg:pr-7 lg:pb-0" aria-label="Filter hackathons">
+      <aside className="border-b border-border pb-6 lg:sticky lg:top-20 lg:border-r lg:border-b-0 lg:pr-7 lg:pb-0" aria-label="Filter hackathons">
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-sm font-semibold">Filters</h2>
           {activeFilterCount > 0 && (
-            <button type="button" onClick={() => setFilters(emptyFilters)} className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400">
+            <button type="button" onClick={() => setFilters(emptyFilters)} className="flex items-center gap-1 text-xs text-accent-text hover:underline">
               <RotateCcw size={12} /> Reset
             </button>
           )}
@@ -96,7 +97,7 @@ export function HackathonExplorer({ hackathons }: { hackathons: HackathonListIte
             <select
               value={filters.hosts[0] ?? ""}
               onChange={(event) => setFilters((current) => ({ ...current, hosts: event.target.value ? [event.target.value] : [] }))}
-              className="h-9 w-full border border-border bg-surface px-2 text-xs text-foreground outline-none focus:border-blue-500"
+              className="h-9 w-full border border-border bg-surface px-2 text-xs text-foreground outline-none focus:border-accent"
             >
               <option value="">All hosts</option>
               {hosts.map((host) => <option key={host} value={host}>{host}</option>)}
@@ -108,16 +109,20 @@ export function HackathonExplorer({ hackathons }: { hackathons: HackathonListIte
       <section aria-labelledby="all-hackathons-heading">
         <div className="mb-4 flex items-center justify-between gap-4">
           <h2 id="all-hackathons-heading" className="text-sm font-semibold">All hackathons</h2>
-          <p className="text-xs text-muted">{filteredHackathons.length} {filteredHackathons.length === 1 ? "result" : "results"}</p>
+          <p className="font-mono text-[11px] tabular-nums text-muted">{filteredHackathons.length} {filteredHackathons.length === 1 ? "result" : "results"}</p>
         </div>
         {filteredHackathons.length > 0 ? (
-          <div className="space-y-4">
-            {filteredHackathons.map((hackathon) => <HackathonCard key={hackathon.slug} hackathon={hackathon} />)}
+          <div className="divide-y divide-border border-y border-border">
+            {filteredHackathons.map((hackathon, index) => (
+              <Reveal key={hackathon.slug} delay={Math.min(index * 0.05, 0.35)} y={10}>
+                <HackathonCard hackathon={hackathon} index={index} />
+              </Reveal>
+            ))}
           </div>
         ) : (
           <div className="border border-dashed border-border px-6 py-16 text-center">
             <p className="text-sm font-medium">No hackathons match these filters.</p>
-            <button type="button" onClick={() => setFilters(emptyFilters)} className="mt-2 text-xs text-blue-600 hover:underline dark:text-blue-400">Clear all filters</button>
+            <button type="button" onClick={() => setFilters(emptyFilters)} className="mt-2 text-xs text-accent-text hover:underline">Clear all filters</button>
           </div>
         )}
       </section>
