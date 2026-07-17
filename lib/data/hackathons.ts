@@ -4,12 +4,20 @@ import { asc, count, desc, eq } from "drizzle-orm";
 
 import { db } from "@/db";
 import { hackathons, projects } from "@/db/schema";
-import { getIndexCoverage, type IndexCoverage } from "@/lib/index-coverage";
+import {
+  getIndexCoverage,
+  getIsFullyIndexed,
+  type IndexCoverage,
+} from "@/lib/index-coverage";
 import { getHackathonCoverPublicUrl } from "@/lib/supabase/hackathon-covers";
 import { getProjectCoverPublicUrl } from "@/lib/supabase/project-covers";
 
 export type EventStatus = "upcoming" | "active" | "completed";
 export type IndexingStatus = "queued" | "running" | "succeeded" | "partial" | "failed";
+export type IndexingStage =
+  | "discovering_projects"
+  | "scraping_projects"
+  | "ingesting_repositories";
 
 export type HackathonListItem = {
   slug: string;
@@ -25,6 +33,10 @@ export type HackathonListItem = {
   indexCoverage: IndexCoverage;
   eventStatus: EventStatus;
   indexingStatus: IndexingStatus;
+  indexingStage: IndexingStage | null;
+  indexingProgressCompleted: number;
+  indexingProgressTotal: number | null;
+  isFullyIndexed: boolean;
   lastIndexedAt: string | null;
 };
 
@@ -75,6 +87,9 @@ const hackathonSelection = {
   availableProjectCount: hackathons.projectCount,
   indexedProjectCount: count(projects.id),
   indexingStatus: hackathons.indexingStatus,
+  indexingStage: hackathons.indexingStage,
+  indexingProgressCompleted: hackathons.indexingProgressCompleted,
+  indexingProgressTotal: hackathons.indexingProgressTotal,
   lastIndexedAt: hackathons.lastIndexedAt,
 };
 
@@ -90,16 +105,26 @@ type HackathonRow = {
   availableProjectCount: number | null;
   indexedProjectCount: number;
   indexingStatus: string;
+  indexingStage: string | null;
+  indexingProgressCompleted: number;
+  indexingProgressTotal: number | null;
   lastIndexedAt: string | null;
 };
 
 function mapHackathon(row: HackathonRow): HackathonListItem {
   const { coverImagePath, ...hackathon } = row;
+  const indexCoverage = getIndexCoverage(row.indexedProjectCount, row.availableProjectCount);
   return {
     ...hackathon,
     coverImageUrl: getHackathonCoverPublicUrl(coverImagePath),
-    indexCoverage: getIndexCoverage(row.indexedProjectCount, row.availableProjectCount),
+    indexCoverage,
     indexingStatus: row.indexingStatus as IndexingStatus,
+    indexingStage: row.indexingStage as IndexingStage | null,
+    isFullyIndexed: getIsFullyIndexed(
+      row.indexingStatus,
+      row.indexedProjectCount,
+      row.availableProjectCount,
+    ),
     eventStatus: getEventStatus(row.startsAt, row.endsAt),
   };
 }

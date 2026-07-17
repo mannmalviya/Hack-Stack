@@ -1,20 +1,12 @@
-import { CalendarDays, Database, FolderKanban } from "lucide-react";
+import { CalendarDays, Database, FolderKanban, LoaderCircle } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import type { EventStatus, HackathonListItem, IndexingStatus } from "@/lib/data/hackathons";
+import type {
+  HackathonListItem,
+  IndexingStage,
+  IndexingStatus,
+} from "@/lib/data/hackathons";
 import { formatIndexedProjectCount, indexCoverageLabels } from "@/lib/index-coverage";
-
-const statusLabels: Record<EventStatus, string> = {
-  upcoming: "Upcoming",
-  active: "Active",
-  completed: "Completed",
-};
-
-const statusSwatches: Record<EventStatus, string> = {
-  upcoming: "border border-foreground/40",
-  active: "bg-accent",
-  completed: "bg-muted/50",
-};
 
 const indexingLabels: Record<IndexingStatus, string> = {
   queued: "Import queued",
@@ -22,6 +14,12 @@ const indexingLabels: Record<IndexingStatus, string> = {
   succeeded: "Last import succeeded",
   partial: "Last import had issues",
   failed: "Last import failed",
+};
+
+const stageLabels: Record<IndexingStage, string> = {
+  discovering_projects: "Discovering projects",
+  scraping_projects: "Scraping projects",
+  ingesting_repositories: "Ingesting GitHub repositories",
 };
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -40,6 +38,29 @@ function formatDateRange(startsAt: string | null, endsAt: string | null) {
 
 export function HackathonCard({ hackathon, index }: { hackathon: HackathonListItem; index: number }) {
   const initials = hackathon.name.split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word[0]).join("").toUpperCase();
+  const isRunning = hackathon.indexingStatus === "running";
+  const progress = hackathon.indexingProgressTotal !== null
+    ? `${hackathon.indexingProgressCompleted}/${hackathon.indexingProgressTotal}`
+    : hackathon.indexingProgressCompleted > 0
+      ? String(hackathon.indexingProgressCompleted)
+      : null;
+  const runningLabel = hackathon.indexingStage
+    ? stageLabels[hackathon.indexingStage]
+    : "Indexing hackathon";
+  const settledLabel = hackathon.isFullyIndexed
+    ? "Completed"
+    : hackathon.indexingStatus === "queued"
+      ? "Queued"
+      : hackathon.indexingStatus === "failed"
+        ? "Failed"
+        : "Incomplete";
+  const indexingSummary = isRunning
+    ? `${runningLabel}${progress ? ` ${progress}` : ""}`
+    : hackathon.isFullyIndexed
+      ? "All public projects and repositories indexed"
+      : hackathon.indexCoverage !== "complete"
+        ? "Full project coverage not yet indexed"
+        : indexingLabels[hackathon.indexingStatus];
   return (
     <Link
       href={`/hackathons/${hackathon.slug}`}
@@ -68,14 +89,29 @@ export function HackathonCard({ hackathon, index }: { hackathon: HackathonListIt
       </div>
 
       <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <h2 className="text-lg font-semibold tracking-[-0.03em] text-foreground sm:text-xl">
-            {hackathon.name}
-          </h2>
-          <span className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted">
-            <span aria-hidden="true" className={`size-2 ${statusSwatches[hackathon.eventStatus]}`} />
-            {statusLabels[hackathon.eventStatus]}
-          </span>
+        <h2 className="text-lg font-semibold tracking-[-0.03em] text-foreground sm:text-xl">
+          {hackathon.name}
+        </h2>
+        <div className="mt-2 min-h-4">
+          {isRunning ? (
+            <span
+              className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-accent-text"
+              aria-live="polite"
+            >
+              <LoaderCircle size={12} className="animate-spin" aria-hidden="true" />
+              {runningLabel}{progress ? ` ${progress}` : ""}
+            </span>
+          ) : (
+            <span className={`inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.14em] ${
+              hackathon.isFullyIndexed ? "text-accent-text" : "text-muted"
+            }`}>
+              <span
+                aria-hidden="true"
+                className={`size-2 ${hackathon.isFullyIndexed ? "bg-accent" : "bg-muted/50"}`}
+              />
+              {settledLabel}
+            </span>
+          )}
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-[11px] text-muted">
           <span className="flex items-center gap-1.5 tabular-nums">
@@ -98,8 +134,17 @@ export function HackathonCard({ hackathon, index }: { hackathon: HackathonListIt
           {formatDateRange(hackathon.startsAt, hackathon.endsAt)}
         </p>
         <p className="flex items-center gap-2 font-mono text-[11px] text-muted">
-          <Database size={13} />
-          {indexingLabels[hackathon.indexingStatus]}
+          {isRunning ? (
+            <LoaderCircle size={13} className="shrink-0 animate-spin text-accent-text" aria-hidden="true" />
+          ) : (
+            <Database size={13} className="shrink-0" />
+          )}
+          {isRunning && hackathon.indexingProgressTotal !== null
+            ? `${Math.max(
+                hackathon.indexingProgressTotal - hackathon.indexingProgressCompleted,
+                0,
+              )} ${hackathon.indexingStage === "ingesting_repositories" ? "repositories" : "projects"} remaining`
+            : indexingSummary}
         </p>
       </div>
     </Link>

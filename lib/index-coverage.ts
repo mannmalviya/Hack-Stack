@@ -17,6 +17,15 @@ export function getIndexCoverage(
   return "partial";
 }
 
+export function getIsFullyIndexed(
+  indexingStatus: string,
+  indexedProjectCount: number,
+  availableProjectCount: number | null,
+) {
+  return indexingStatus === "succeeded"
+    && getIndexCoverage(indexedProjectCount, availableProjectCount) === "complete";
+}
+
 export function formatIndexedProjectCount(
   indexedProjectCount: number,
   availableProjectCount: number | null,

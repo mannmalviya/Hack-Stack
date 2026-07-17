@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { HackathonIndexingBanner } from "@/components/hackathons/hackathon-indexing-banner";
 import { HackathonInsightsOverview } from "@/components/hackathons/hackathon-insights";
 import { ProjectGrid } from "@/components/projects/project-grid";
 import { getHackathonBySlug, getProjectsByHackathon } from "@/lib/data/hackathons";
@@ -54,6 +55,8 @@ export default async function HackathonPage({ params, searchParams }: PageProps)
         <ChevronRight size={12} />
         <span className="truncate text-foreground">{hackathon.name}</span>
       </nav>
+
+      <HackathonIndexingBanner hackathon={hackathon} />
 
       <section className="flex flex-col gap-6 border-b border-border pb-8 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex items-start gap-5">

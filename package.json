@@ -16,6 +16,8 @@
     "test": "tsx --test tests/**/*.test.ts"
   },
   "dependencies": {
+    "@icons-pack/react-simple-icons": "^12.4.0",
+    "@lobehub/icons-static-svg": "^1.93.0",
     "@supabase/ssr": "0.12.3",
     "@supabase/supabase-js": "2.110.7",
     "cheerio": "^1.2.0",

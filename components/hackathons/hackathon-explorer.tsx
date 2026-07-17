@@ -1,7 +1,8 @@
 "use client";
 
 import { RotateCcw } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { HackathonCard } from "@/components/hackathons/hackathon-card";
 import { Reveal } from "@/components/motion/reveal";
 import type { EventStatus, HackathonListItem, IndexingStatus } from "@/lib/data/hackathons";
@@ -21,7 +22,7 @@ const eventStatusOptions: { value: EventStatus; label: string }[] = [
 ];
 
 const indexingStatusOptions: { value: IndexingStatus; label: string }[] = [
-  { value: "succeeded", label: "Indexed" },
+  { value: "succeeded", label: "Last import succeeded" },
   { value: "partial", label: "Partially indexed" },
   { value: "running", label: "Indexing" },
   { value: "queued", label: "Queued" },
@@ -53,9 +54,23 @@ function FilterGroup({ title, children }: { title: string; children: React.React
 
 export function HackathonExplorer({ hackathons }: { hackathons: HackathonListItem[] }) {
   const [filters, setFilters] = useState<Filters>(emptyFilters);
+  const [isRefreshing, startRefresh] = useTransition();
+  const router = useRouter();
+  const hasRunningImport = hackathons.some(
+    (hackathon) => hackathon.indexingStatus === "running",
+  );
   const hosts = [...new Set(
     hackathons.map((hackathon) => hackathon.organizer).filter((host): host is string => Boolean(host)),
   )];
+
+  useEffect(() => {
+    const refreshInterval = window.setInterval(() => {
+      if (document.visibilityState !== "visible" || isRefreshing) return;
+      startRefresh(() => router.refresh());
+    }, hasRunningImport ? 2000 : 10000);
+
+    return () => window.clearInterval(refreshInterval);
+  }, [hasRunningImport, isRefreshing, router]);
 
   function toggle<K extends keyof Filters>(key: K, value: Filters[K][number]) {
     setFilters((current) => {

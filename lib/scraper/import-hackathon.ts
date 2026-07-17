@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import { hackathons, projects } from "@/db/schema";
@@ -185,6 +185,9 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
       devpostSlug: source.devpostSlug,
       ...metadata,
       indexingStatus: "running",
+      indexingStage: "discovering_projects",
+      indexingProgressCompleted: 0,
+      indexingProgressTotal: metadata.projectCount,
       updatedAt: now,
     })
     .onConflictDoUpdate({
@@ -193,6 +196,9 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
         devpostUrl: source.devpostUrl,
         ...metadata,
         indexingStatus: "running",
+        indexingStage: "discovering_projects",
+        indexingProgressCompleted: 0,
+        indexingProgressTotal: metadata.projectCount,
         updatedAt: now,
       },
     })
@@ -235,12 +241,22 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
         }
         if (limit !== "all" && cards.length === limit) break;
       }
+      const galleryProgressTotal = limit === "all"
+        ? Math.max(cards.length, metadata.projectCount)
+        : Math.max(cards.length, Math.min(limit, metadata.projectCount));
+      await db
+        .update(hackathons)
+        .set({
+          indexingStage: "discovering_projects",
+          indexingProgressCompleted: cards.length,
+          indexingProgressTotal: galleryProgressTotal,
+          updatedAt: new Date().toISOString(),
+        })
+        .where(eq(hackathons.id, hackathon.id));
       options.onProgress?.({
         type: "gallery",
         discovered: cards.length,
-        total: limit === "all"
-          ? Math.max(cards.length, metadata.projectCount)
-          : Math.min(limit, metadata.projectCount),
+        total: galleryProgressTotal,
       });
 
       if (!parsed.nextHref || (limit !== "all" && cards.length >= limit)) break;
@@ -260,6 +276,15 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
 
     if (cards.length === 0) throw new Error("No public projects were found in this gallery");
     const selectedCards = limit === "all" ? cards : cards.slice(0, limit);
+    await db
+      .update(hackathons)
+      .set({
+        indexingStage: "scraping_projects",
+        indexingProgressCompleted: 0,
+        indexingProgressTotal: selectedCards.length,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(hackathons.id, hackathon.id));
     let detailFailures = 0;
     let completed = 0;
     const scraped = await mapConcurrent(selectedCards, concurrency, async (card) => {
@@ -289,6 +314,14 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
         }
       }
       completed += 1;
+      const progressUpdatedAt = new Date().toISOString();
+      await db
+        .update(hackathons)
+        .set({
+          indexingProgressCompleted: sql`greatest(${hackathons.indexingProgressCompleted}, ${completed})`,
+          updatedAt: progressUpdatedAt,
+        })
+        .where(eq(hackathons.id, hackathon.id));
       options.onProgress?.({
         type: "project",
         completed,
@@ -311,10 +344,27 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
     const githubProjects = persistedProjects.filter(
       (project): project is typeof project & { githubUrl: string } => Boolean(project.githubUrl),
     );
+    await db
+      .update(hackathons)
+      .set({
+        indexingStage: "ingesting_repositories",
+        indexingProgressCompleted: 0,
+        indexingProgressTotal: githubProjects.length,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(hackathons.id, hackathon.id));
     let completedGithubProjects = 0;
     const githubResults = await ingestProjectGithubRepositories(githubProjects, {
-      onProjectComplete(result) {
+      async onProjectComplete(result) {
         completedGithubProjects += 1;
+        const progressUpdatedAt = new Date().toISOString();
+        await db
+          .update(hackathons)
+          .set({
+            indexingProgressCompleted: sql`greatest(${hackathons.indexingProgressCompleted}, ${completedGithubProjects})`,
+            updatedAt: progressUpdatedAt,
+          })
+          .where(eq(hackathons.id, hackathon.id));
         options.onProgress?.({
           type: "github",
           completed: completedGithubProjects,
@@ -339,6 +389,9 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
       .update(hackathons)
       .set({
         indexingStatus: status,
+        indexingStage: null,
+        indexingProgressCompleted: githubResults.length,
+        indexingProgressTotal: githubProjects.length,
         lastIndexedAt: completedAt,
         updatedAt: completedAt,
       })
@@ -359,7 +412,11 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
   } catch (error) {
     await db
       .update(hackathons)
-      .set({ indexingStatus: "failed", updatedAt: new Date().toISOString() })
+      .set({
+        indexingStatus: "failed",
+        indexingStage: null,
+        updatedAt: new Date().toISOString(),
+      })
       .where(eq(hackathons.id, hackathon.id));
     throw error;
   }

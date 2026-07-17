@@ -334,7 +334,7 @@ export async function ingestProjectGithubRepositories(
   projects: IngestableProject[],
   options: {
     concurrency?: number;
-    onProjectComplete?: (result: GithubIngestionResult) => void;
+    onProjectComplete?: (result: GithubIngestionResult) => void | Promise<void>;
   } = {},
 ) {
   if (projects.length === 0) return [];
@@ -347,7 +347,7 @@ export async function ingestProjectGithubRepositories(
     client = createGithubClient();
   } catch (error) {
     const message = errorMessage(error);
-    return projects.map((project) => {
+    const results = projects.map((project) => {
       const result: GithubIngestionResult = {
         projectId: project.id,
         projectName: project.name,
@@ -359,9 +359,10 @@ export async function ingestProjectGithubRepositories(
         warnings: [],
         error: message,
       };
-      options.onProjectComplete?.(result);
       return result;
     });
+    await Promise.all(results.map((result) => options.onProjectComplete?.(result)));
+    return results;
   }
   const results = new Array<GithubIngestionResult>(projects.length);
   let nextIndex = 0;
@@ -372,7 +373,7 @@ export async function ingestProjectGithubRepositories(
       nextIndex += 1;
       const result = await ingestProjectGithubRepository(projects[index], client);
       results[index] = result;
-      options.onProjectComplete?.(result);
+      await options.onProjectComplete?.(result);
     }
   }
 

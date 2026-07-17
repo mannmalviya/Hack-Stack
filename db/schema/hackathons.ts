@@ -30,6 +30,11 @@ export const hackathons = pgTable(
     endsAt: timestamp("ends_at", { withTimezone: true, mode: "string" }),
     projectCount: integer("project_count"),
     indexingStatus: text("indexing_status").default("queued").notNull(),
+    indexingStage: text("indexing_stage"),
+    indexingProgressCompleted: integer("indexing_progress_completed")
+      .default(0)
+      .notNull(),
+    indexingProgressTotal: integer("indexing_progress_total"),
     lastIndexedAt: timestamp("last_indexed_at", {
       withTimezone: true,
       mode: "string",
@@ -53,6 +58,22 @@ export const hackathons = pgTable(
     check(
       "hackathons_indexing_status_check",
       sql`indexing_status = ANY (ARRAY['queued'::text, 'running'::text, 'succeeded'::text, 'partial'::text, 'failed'::text])`,
+    ),
+    check(
+      "hackathons_indexing_stage_check",
+      sql`${table.indexingStage} is null or ${table.indexingStage} in ('discovering_projects', 'scraping_projects', 'ingesting_repositories')`,
+    ),
+    check(
+      "hackathons_indexing_progress_completed_nonnegative",
+      sql`${table.indexingProgressCompleted} >= 0`,
+    ),
+    check(
+      "hackathons_indexing_progress_total_nonnegative",
+      sql`${table.indexingProgressTotal} is null or ${table.indexingProgressTotal} >= 0`,
+    ),
+    check(
+      "hackathons_indexing_progress_bounds",
+      sql`${table.indexingProgressTotal} is null or ${table.indexingProgressCompleted} <= ${table.indexingProgressTotal}`,
     ),
     check(
       "hackathons_cover_image_storage_check",

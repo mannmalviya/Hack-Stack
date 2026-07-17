@@ -5,6 +5,7 @@ import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 
+import { TechnologyIcon } from "@/components/icons/technology-icon";
 import { AnimatedBar } from "@/components/motion/animated-bar";
 import { DUR, EASE_OUT } from "@/components/motion/tokens";
 import type { TechnologyUsage } from "@/lib/insights/hackathon-analytics";
@@ -69,8 +70,11 @@ function TechnologyProjectsDialog({
         exit={{ opacity: 0, y: -8, scale: 0.98 }}
         transition={{ duration: DUR.fast, ease: EASE_OUT }}
       >
-        <div className="flex items-baseline gap-3 border-b border-border px-4 py-3">
-          <h3 id={titleId} className="text-sm font-semibold">{usage.name}</h3>
+        <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+          <h3 id={titleId} className="inline-flex items-center gap-2 text-sm font-semibold">
+            <TechnologyIcon name={usage.name} className="size-4 text-muted" />
+            {usage.name}
+          </h3>
           <span className="font-mono text-[11px] tabular-nums text-muted">
             {usage.totalProjects} {usage.totalProjects === 1 ? "project" : "projects"}
           </span>
@@ -140,8 +144,9 @@ export function TechnologyList({
                 aria-haspopup="dialog"
                 className="group -mx-2 block w-full px-2 py-2 text-left transition-colors hover:bg-foreground/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent/50"
               >
-                <div className="mb-1.5 flex items-baseline justify-between gap-4 text-xs">
-                  <span className="inline-flex items-center gap-1 font-medium text-foreground transition-colors group-hover:text-accent-text">
+                <div className="mb-1.5 flex items-center justify-between gap-4 text-xs">
+                  <span className="inline-flex items-center gap-2 font-medium text-foreground transition-colors group-hover:text-accent-text">
+                    <TechnologyIcon name={item.name} className="size-4 text-muted transition-colors group-hover:text-accent-text" />
                     {item.name}
                     <ChevronRight
                       size={12}
