@@ -1,7 +1,7 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
 
 import { db } from "@/db";
-import { hackathons, projects } from "@/db/schema";
+import { hackathons, projectEmbeddingSources, projects } from "@/db/schema";
 
 import {
   type GalleryProject,
@@ -64,6 +64,8 @@ function fallbackProject(card: GalleryProject): ScrapedProject {
   return {
     ...card,
     description: null,
+    inspiration: null,
+    whatItDoes: null,
     demoUrl: null,
     videoUrl: null,
     githubUrl: null,
@@ -165,6 +167,31 @@ async function upsertProjects(hackathonId: string, scraped: ScrapeResult[]) {
           name: projects.name,
           githubUrl: projects.githubUrl,
         });
+
+      if (!result.detailFailed) {
+        if (project.inspiration && project.whatItDoes) {
+          await tx
+            .insert(projectEmbeddingSources)
+            .values({
+              projectId: stored.id,
+              inspiration: project.inspiration,
+              whatItDoes: project.whatItDoes,
+              updatedAt: now,
+            })
+            .onConflictDoUpdate({
+              target: projectEmbeddingSources.projectId,
+              set: {
+                inspiration: project.inspiration,
+                whatItDoes: project.whatItDoes,
+                updatedAt: now,
+              },
+            });
+        } else {
+          await tx
+            .delete(projectEmbeddingSources)
+            .where(eq(projectEmbeddingSources.projectId, stored.id));
+        }
+      }
       persisted.push(stored);
     }
   });

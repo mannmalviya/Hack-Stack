@@ -34,6 +34,8 @@ export type TeamMember = {
 
 export type ScrapedProject = GalleryProject & {
   description: string | null;
+  inspiration: string | null;
+  whatItDoes: string | null;
   demoUrl: string | null;
   videoUrl: string | null;
   githubUrl: string | null;
@@ -221,14 +223,20 @@ export function parseGalleryPage(html: string) {
   return { projects, nextHref: nextHref ?? null };
 }
 
-function parseStory($: cheerio.CheerioAPI, projectName: string) {
+function findStoryElement($: cheerio.CheerioAPI, projectName: string) {
   const candidates = $("#app-details-left > div").toArray();
-  const storyElement = candidates.find((element) =>
+  return candidates.find((element) =>
     cleanText($(element).children("h1").first().text()) === projectName,
   ) ?? candidates.find((element) => {
     const candidate = $(element);
     return !candidate.attr("id") && candidate.children("h1, h2, h3").length > 0;
   });
+}
+
+function parseStory(
+  $: cheerio.CheerioAPI,
+  storyElement: ReturnType<typeof findStoryElement>,
+) {
   if (!storyElement) return null;
 
   const copy = $(storyElement).clone();
@@ -238,6 +246,62 @@ function parseStory($: cheerio.CheerioAPI, projectName: string) {
     .map((element) => cleanText($(element).text()))
     .filter(Boolean);
   return nullableText(blocks.length > 0 ? blocks.join(" ") : copy.text());
+}
+
+type EmbeddingSection = "inspiration" | "whatItDoes";
+
+function normalizeStoryHeading(value: string) {
+  return cleanText(
+    value
+      .normalize("NFKD")
+      .toLocaleLowerCase("en-US")
+      .replace(/[^\p{L}\p{N}\s]/gu, " "),
+  );
+}
+
+function embeddingSectionForHeading(value: string): EmbeddingSection | null {
+  const heading = normalizeStoryHeading(value);
+  if (/(?:^| )what it does(?: |$)/.test(heading)) return "whatItDoes";
+  if (/(?:^| )inspiration(?: |$)/.test(heading)) return "inspiration";
+  return null;
+}
+
+function parseEmbeddingSections(
+  $: cheerio.CheerioAPI,
+  storyElement: ReturnType<typeof findStoryElement>,
+) {
+  const sections: Record<EmbeddingSection, string[]> = {
+    inspiration: [],
+    whatItDoes: [],
+  };
+  if (!storyElement) {
+    return { inspiration: null, whatItDoes: null };
+  }
+
+  let currentSection: EmbeddingSection | null = null;
+  $(storyElement)
+    .find("h2, h3, h4, h5, h6, p, li")
+    .each((_, element) => {
+      const tagName = element.tagName.toLowerCase();
+      if (/^h[2-6]$/.test(tagName)) {
+        // Every heading closes the preceding section, including headings that
+        // are not embedding inputs.
+        currentSection = embeddingSectionForHeading($(element).text());
+        return;
+      }
+      if (!currentSection) return;
+
+      // A parent list item already contains the nested block's text. Skipping
+      // nested p/li nodes prevents the same prose from being collected twice.
+      if ($(element).parentsUntil(storyElement, "p, li").length > 0) return;
+      const text = cleanText($(element).text());
+      if (text) sections[currentSection].push(text);
+    });
+
+  return {
+    inspiration: nullableText(sections.inspiration.join(" ")),
+    whatItDoes: nullableText(sections.whatItDoes.join(" ")),
+  };
 }
 
 function parseAwards($: cheerio.CheerioAPI, hackathonUrl: string) {
@@ -315,13 +379,16 @@ export function parseProjectPage(
     $("meta[property='og:image']").first().attr("content"),
   ) ?? card.coverImageSourceUrl;
   const awards = parseAwards($, hackathonUrl);
+  const storyElement = findStoryElement($, name);
+  const embeddingSections = parseEmbeddingSections($, storyElement);
 
   return {
     ...card,
     name,
     tagline,
     coverImageSourceUrl,
-    description: parseStory($, name),
+    description: parseStory($, storyElement),
+    ...embeddingSections,
     demoUrl,
     videoUrl,
     githubUrl,

@@ -27,7 +27,7 @@ const projectHtml = `
   <header id="software-header"><h1 id="app-title">Example Project</h1><p class="large">A useful project.</p></header>
   <article id="app-details"><div id="app-details-left">
     <div id="gallery"><iframe class="video-embed" src="https://youtube.com/embed/123"></iframe></div>
-    <div><h2>What it does</h2><p>It helps judges.</p></div>
+    <div><h2>Inspiration</h2><p>Judges need better evidence.</p><h2>What it does</h2><p>It helps judges.</p></div>
     <div id="built-with"><span class="cp-tag">TypeScript</span><span class="cp-tag">Supabase</span></div>
     <nav class="app-links"><a href="https://github.com/acme/example">Code</a><a href="https://example.com/demo">Demo</a></nav>
   </div><aside id="app-details-right">
@@ -79,7 +79,12 @@ test("parses event metadata and gallery cards", () => {
 test("parses project evidence fields", () => {
   const card = parseGalleryPage(galleryHtml).projects[0];
   const project = parseProjectPage(projectHtml, card, "https://example-hack.devpost.com/");
-  assert.equal(project.description, "What it does It helps judges.");
+  assert.equal(
+    project.description,
+    "Inspiration Judges need better evidence. What it does It helps judges.",
+  );
+  assert.equal(project.inspiration, "Judges need better evidence.");
+  assert.equal(project.whatItDoes, "It helps judges.");
   assert.equal(project.githubUrl, "https://github.com/acme/example");
   assert.equal(project.demoUrl, "https://example.com/demo");
   assert.equal(project.videoUrl, "https://youtube.com/embed/123");
@@ -100,4 +105,65 @@ test("parses project evidence fields", () => {
   }]);
   assert.equal(project.isWinner, true);
   assert.equal(project.winningTrack, "Best Overall");
+});
+
+test("extracts normalized, loose-matching embedding sections in document order", () => {
+  const card = parseGalleryPage(galleryHtml).projects[0];
+  const html = projectHtml.replace(
+    '<div><h2>Inspiration</h2><p>Judges need better evidence.</p><h2>What it does</h2><p>It helps judges.</p></div>',
+    `<div>
+      <h2>✨ Our INSPIRATION!</h2>
+      <p>First idea.</p>
+      <ul><li>Second idea.</li></ul>
+      <h3>Challenges we ran into</h3>
+      <p>This must not be included.</p>
+      <h2>What it does today?</h2>
+      <p>Primary behavior.</p>
+      <ul><li><p>Nested behavior.</p></li></ul>
+      <h2>More inspiration</h2>
+      <p>Later inspiration.</p>
+      <h2>What it does next</h2>
+      <p>Future behavior.</p>
+    </div>`,
+  );
+
+  const project = parseProjectPage(html, card, "https://example-hack.devpost.com/");
+  assert.equal(project.inspiration, "First idea. Second idea. Later inspiration.");
+  assert.equal(
+    project.whatItDoes,
+    "Primary behavior. Nested behavior. Future behavior.",
+  );
+});
+
+test("returns null for embedding sections that are absent", () => {
+  const card = parseGalleryPage(galleryHtml).projects[0];
+  const withoutInspiration = projectHtml.replace(
+    "<h2>Inspiration</h2><p>Judges need better evidence.</p>",
+    "",
+  );
+  const withoutTargets = withoutInspiration.replace(
+    "<h2>What it does</h2><p>It helps judges.</p>",
+    "<h2>Challenges</h2><p>It was difficult.</p>",
+  );
+
+  assert.equal(
+    parseProjectPage(withoutInspiration, card, "https://example-hack.devpost.com/")
+      .inspiration,
+    null,
+  );
+  assert.deepEqual(
+    {
+      inspiration: parseProjectPage(
+        withoutTargets,
+        card,
+        "https://example-hack.devpost.com/",
+      ).inspiration,
+      whatItDoes: parseProjectPage(
+        withoutTargets,
+        card,
+        "https://example-hack.devpost.com/",
+      ).whatItDoes,
+    },
+    { inspiration: null, whatItDoes: null },
+  );
 });

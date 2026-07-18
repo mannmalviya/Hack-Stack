@@ -7,6 +7,7 @@ import { hackerContributorMetrics } from "./hacker-contributor-metrics";
 import { hackerInsightRuns } from "./hacker-insight-runs";
 import { hackerTeamMetrics } from "./hacker-team-metrics";
 import { projectRepositories } from "./project-repositories";
+import { projectEmbeddingSources } from "./project-embedding-sources";
 import { projects } from "./projects";
 import { repositoryCommits } from "./repository-commits";
 import { repositoryCommitAuthors } from "./repository-commit-authors";
@@ -24,6 +25,7 @@ export { hackerContributorMetrics } from "./hacker-contributor-metrics";
 export { hackerInsightRuns } from "./hacker-insight-runs";
 export { hackerTeamMetrics } from "./hacker-team-metrics";
 export { projectRepositories } from "./project-repositories";
+export { projectEmbeddingSources } from "./project-embedding-sources";
 export { repositoryCommits } from "./repository-commits";
 export { repositoryCommitAuthors } from "./repository-commit-authors";
 export { repositoryDependencies } from "./repository-dependencies";
@@ -55,8 +57,22 @@ export const projectsRelations = relations(projects, ({ many, one }) => ({
     references: [hackathons.id],
   }),
   repositories: many(projectRepositories),
+  embeddingSource: one(projectEmbeddingSources, {
+    fields: [projects.id],
+    references: [projectEmbeddingSources.projectId],
+  }),
   hackerTeamMetrics: many(hackerTeamMetrics),
 }));
+
+export const projectEmbeddingSourcesRelations = relations(
+  projectEmbeddingSources,
+  ({ one }) => ({
+    project: one(projects, {
+      fields: [projectEmbeddingSources.projectId],
+      references: [projects.id],
+    }),
+  }),
+);
 
 export const hackerInsightRunsRelations = relations(
   hackerInsightRuns,
