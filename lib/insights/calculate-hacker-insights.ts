@@ -88,6 +88,13 @@ export async function calculateHackerInsights(input: {
 
   try {
     await db.transaction(async (tx) => {
+      // A full gallery import and a targeted single-project import can reach
+      // this concurrently for the same hackathon. Without serialization their
+      // delete/insert rebuilds interleave and leave duplicated metric rows.
+      await tx.execute(
+        sql`select pg_advisory_xact_lock(hashtextextended(${input.hackathonId}, 0))`,
+      );
+
       await tx
         .delete(hackerTeamMetrics)
         .where(eq(hackerTeamMetrics.runId, existing.id));

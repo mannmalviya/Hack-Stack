@@ -10,7 +10,7 @@ import { DUR, EASE_OUT } from "@/components/motion/tokens";
 
 const pages = [
   { label: "Browse hackathons", href: "/hackathons", icon: Trophy },
-  { label: "Request a hackathon", href: "/requests", icon: FileText },
+  { label: "Index Hackathons/Projects", href: "/requests", icon: FileText },
 ];
 
 export function CommandMenu() {

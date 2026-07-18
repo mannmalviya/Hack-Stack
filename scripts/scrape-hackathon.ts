@@ -14,7 +14,7 @@ async function main() {
   const url = args[0];
   if (!url) usage();
 
-  let limit: ImportLimit = 20;
+  let limit: ImportLimit = "all";
   for (let index = 1; index < args.length; index += 1) {
     if (args[index] !== "--limit" || !args[index + 1]) usage();
     const parsedLimit = parseImportLimit(args[index + 1]);

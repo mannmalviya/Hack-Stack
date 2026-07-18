@@ -70,10 +70,10 @@
 ## Product rules
 
 - Hackathon URLs enter an admin approval queue before indexing.
-- Guests may import up to five projects and ask three AI questions per project.
-- Signed-in users may import 5, 10, or 20 projects and save notes, comparisons, and conversations.
+- Guests may import up to ten individual projects, keep up to five hackathon requests pending, and ask three AI questions per project.
+- Signed-in users may submit unlimited project imports and hackathon requests and save notes, comparisons, and conversations.
 - GitHub and publicly accessible demos are the only repository/demo sources in v1.
-- Full-hackathon indexing, private repositories, billing, collaboration workspaces, and score submission are out of scope.
+- An approved hackathon URL indexes every discoverable project. Private repositories, billing, collaboration workspaces, and score submission are out of scope.
 
 ## Code conventions
 
@@ -96,3 +96,9 @@ npm run build
 ## Commit attribution
 
 - Append `Co-authored-by: Codex <noreply@openai.com>` to every commit created in this repository.
+
+<!-- TRIGGER.DEV SKILLS START -->
+## Trigger.dev agent skills
+
+This project has Trigger.dev agent skills installed in `.agents/skills/`. Before writing or changing Trigger.dev code (background tasks, scheduled tasks, realtime, or chat.agent AI agents), load the most relevant skill: `trigger-authoring-chat-agent`, `trigger-authoring-tasks`, `trigger-chat-agent-advanced`, `trigger-cost-savings`, `trigger-getting-started`, `trigger-realtime-and-frontend`.
+<!-- TRIGGER.DEV SKILLS END -->

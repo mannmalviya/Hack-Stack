@@ -12,6 +12,7 @@
     "db:check": "drizzle-kit check",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
+    "trigger:dev": "trigger dev start",
     "scrape:hackathon": "tsx scripts/scrape-hackathon.ts",
     "scrape:devpost": "node scripts/scrape-devpost-project.ts",
     "test": "tsx --test tests/**/*.test.ts"
@@ -21,6 +22,7 @@
     "@lobehub/icons-static-svg": "^1.93.0",
     "@supabase/ssr": "0.12.3",
     "@supabase/supabase-js": "2.110.7",
+    "@trigger.dev/sdk": "^4.5.4",
     "cheerio": "^1.2.0",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -50,6 +52,7 @@
     "patch-package": "8.0.1",
     "supabase": "^2.109.1",
     "tailwindcss": "^4",
+    "trigger.dev": "^4.5.4",
     "tsx": "^4.23.1",
     "typescript": "^5"
   }

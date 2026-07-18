@@ -10,7 +10,7 @@ access to repository metadata and contents. Local Supabase uses
 prints the local value.
 
 ```bash
-npm run scrape:hackathon -- https://example-hackathon.devpost.com/ --limit 20
+npm run scrape:hackathon -- https://example-hackathon.devpost.com/
 ```
 
 Use `--limit all` to follow Devpost gallery pagination until every public
@@ -20,7 +20,7 @@ project in the hackathon has been discovered:
 npm run scrape:hackathon -- https://example-hackathon.devpost.com/ --limit all
 ```
 
-The limit must be `5`, `10`, `20`, or `all` and defaults to `20`. The command is
+The optional limit must be `5`, `10`, `20`, or `all` and defaults to `all`. The command is
 incremental. On a rerun it walks the gallery to discover submissions, skips every
 project whose Devpost and GitHub data were previously stored successfully, and
 runs the complete pipeline only for new or previously failed projects. A project

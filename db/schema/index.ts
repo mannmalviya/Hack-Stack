@@ -1,6 +1,6 @@
 import { relations } from "drizzle-orm";
 
-import { hackathonRequests } from "./hackathon-requests";
+import { indexingRequests } from "./indexing-requests";
 import { hackathons } from "./hackathons";
 import { githubRepositories } from "./github-repositories";
 import { hackerContributorMetrics } from "./hacker-contributor-metrics";
@@ -17,7 +17,7 @@ import { repositoryIngestionRuns } from "./repository-ingestion-runs";
 
 // Re-export every table from one entry point for application queries and the
 // schema object passed to the Drizzle client.
-export { hackathonRequests } from "./hackathon-requests";
+export { indexingRequests } from "./indexing-requests";
 export { hackathons } from "./hackathons";
 export { projects } from "./projects";
 export { githubRepositories, privateSchema } from "./github-repositories";
@@ -33,19 +33,23 @@ export { repositoryFiles } from "./repository-files";
 export { repositoryIngestionRuns } from "./repository-ingestion-runs";
 
 // An approved request may point to the hackathon that was created from it.
-export const hackathonRequestsRelations = relations(
-  hackathonRequests,
+export const indexingRequestsRelations = relations(
+  indexingRequests,
   ({ one }) => ({
     hackathon: one(hackathons, {
-      fields: [hackathonRequests.approvedHackathonId],
+      fields: [indexingRequests.hackathonId],
       references: [hackathons.id],
+    }),
+    project: one(projects, {
+      fields: [indexingRequests.projectId],
+      references: [projects.id],
     }),
   }),
 );
 
 // A hackathon can be referenced by approval requests and contain many projects.
 export const hackathonsRelations = relations(hackathons, ({ many }) => ({
-  hackathonRequests: many(hackathonRequests),
+  indexingRequests: many(indexingRequests),
   hackerInsightRuns: many(hackerInsightRuns),
   projects: many(projects),
 }));

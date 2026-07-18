@@ -29,6 +29,12 @@
 *.pem
 CLAUDE.md
 
+# agent tooling (vendored skill docs — regenerate via the tool's CLI; shared config lives in AGENTS.md)
+.claude/
+.agents/
+.github/skills/
+.github/copilot-instructions.md
+
 # debug
 npm-debug.log*
 yarn-debug.log*
@@ -46,12 +52,16 @@ yarn-error.log*
 # vercel
 .vercel
 
+# trigger.dev (local build artifacts — keep trigger.config.ts and /trigger tracked)
+.trigger
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
 
 TODO.md
 MY_NOTES.md
+/docs/
 
 # tmp
 /tmp

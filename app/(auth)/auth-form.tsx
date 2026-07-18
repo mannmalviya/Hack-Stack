@@ -85,10 +85,27 @@ export function AuthForm({ callbackError, mode, nextPath }: AuthFormProps) {
       const callbackUrl = new URL("/callback", window.location.origin);
       callbackUrl.searchParams.set("next", destination);
 
-      const { data, error: signInError } = await createClient().auth.signInWithOAuth({
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      const oauthOptions = {
         provider,
         options: { redirectTo: callbackUrl.toString() },
-      });
+      } as const;
+      // Guests carry submitted requests on their anonymous user, so link the
+      // provider to it rather than starting a fresh session. This applies to
+      // login as well as signup — a guest who reaches for "sign in" would
+      // otherwise lose every request they submitted.
+      let { data, error: signInError } = user?.is_anonymous
+        ? await supabase.auth.linkIdentity(oauthOptions)
+        : await supabase.auth.signInWithOAuth(oauthOptions);
+
+      // The provider account may already belong to a real user, which cannot be
+      // linked onto the guest. Fall back to a normal sign-in so returning users
+      // are not locked out; their guest-session requests stay on the anonymous
+      // user and are not carried over.
+      if (signInError?.code === "identity_already_exists") {
+        ({ data, error: signInError } = await supabase.auth.signInWithOAuth(oauthOptions));
+      }
 
       if (signInError) {
         throw signInError;

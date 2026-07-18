@@ -5,6 +5,7 @@ import {
   normalizeHackathonUrl,
   parseGalleryPage,
   parseHackathonPage,
+  parseProjectHackathonUrl,
   parseProjectPage,
 } from "../lib/scraper/devpost";
 import { parseImportLimit } from "../lib/scraper/import-limits";
@@ -105,6 +106,14 @@ test("parses project evidence fields", () => {
   }]);
   assert.equal(project.isWinner, true);
   assert.equal(project.winningTrack, "Best Overall");
+});
+
+test("finds the parent hackathon from a project page", () => {
+  assert.equal(
+    parseProjectHackathonUrl(projectHtml),
+    "https://example-hack.devpost.com/",
+  );
+  assert.throws(() => parseProjectHackathonUrl("<main>No submissions</main>"));
 });
 
 test("extracts normalized, loose-matching embedding sections in document order", () => {

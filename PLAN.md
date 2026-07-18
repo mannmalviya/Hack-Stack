@@ -2,7 +2,7 @@
 
 ## Summary
 
-Build a Next.js + TypeScript judge-review web app for an admin-curated, Devpost-based hackathon catalog. Users can request a hackathon URL for approval; once approved, HackStack imports a bounded project set, produces evidence-grounded briefs, runs calibrated feature checks, and supports judge questions without ever submitting scores.
+Build a Next.js + TypeScript judge-review web app for an admin-curated, Devpost-based hackathon catalog. Users can submit hackathon or project URLs; approved hackathons import their full public gallery while project URLs immediately add that project to its parent hackathon page. HackStack produces evidence-grounded briefs, runs calibrated feature checks, and supports judge questions without ever submitting scores.
 
 Guests can browse and ask up to three AI questions per project. Passwordless accounts unlock saved imports, notes, comparisons, and unlimited copilot use.
 
@@ -15,8 +15,8 @@ Guests can browse and ask up to three AI questions per project. Passwordless acc
   - Provider-agnostic `AIProvider` interface; configure the initial model provider through environment variables and require structured JSON responses.
 
 - Implement the Devpost import workflow:
-  - Users submit a Devpost hackathon/gallery URL and desired scope; requests remain pending until admin approval.
-  - Approved imports present choices of 5, 10, or 20 projects for signed-in users; guests are capped at 5. Full-gallery indexing is out of scope for v1.
+  - Users submit one Devpost hackathon/gallery or project URL. Hackathons remain pending until admin approval and then index every discoverable project; individual projects queue immediately.
+  - Guests may import 10 individual projects and keep 5 hackathon requests pending. Signed-up users have unlimited submissions.
   - Scrape and persist all available Devpost project-card data: title, description, tags, team metadata, demo/video links, and repository links.
   - Store repository URLs and evidence citations only—never persist repository clones or source files.
 
@@ -45,7 +45,7 @@ Guests can browse and ask up to three AI questions per project. Passwordless acc
 
 ## Interfaces and Data
 
-- Expose typed server endpoints/actions for hackathon requests, admin approval, bounded imports, project briefs, verification runs, notes, comparisons, and chat.
+- Expose typed server endpoints/actions for indexing requests, admin approval, full-gallery imports, project briefs, verification runs, notes, comparisons, and chat.
 - Use durable job records with `queued`, `running`, `succeeded`, `partial`, and `failed` states so imports and analyses can resume and report per-project failure reasons.
 - Treat evidence as structured citations: source kind, external URL, repository revision if known, locator (file/route/component/dependency), summary, captured-at time, and confidence.
 - Integrate available Devpost connector metadata—especially hackathon overview and judging criteria—when available; use the bounded public-gallery ingestion layer for the project-card data the connector does not expose.
@@ -53,7 +53,7 @@ Guests can browse and ask up to three AI questions per project. Passwordless acc
 ## Test Plan
 
 - Unit-test import limits, guest quota enforcement, claim-status normalization, evidence-citation validation, and no-score guardrails.
-- Integration-test the approval queue, 5/10/20 project imports, durable job lifecycle, Devpost field normalization, and account-owned notes/conversations.
+- Integration-test the approval queue, guest submission quotas, full-gallery and targeted-project imports, durable job lifecycle, Devpost field normalization, and account-owned notes/conversations.
 - Use fixtures for Devpost pages, GitHub repositories, and public-demo outcomes; verify no repository checkout or source file is persisted.
 - Playwright-test successful verification, unreachable demo, credential-required demo, timeout, and screenshot persistence.
 - Acceptance test: a judge can inspect an approved hackathon, open a project’s Claim Ledger, ask evidence-backed questions, run a feature verification, compare up to three projects, and save notes after signing in.
@@ -63,4 +63,4 @@ Guests can browse and ask up to three AI questions per project. Passwordless acc
 - The launch catalog is controlled through an admin approval queue; unapproved Devpost URLs are never automatically indexed.
 - Initial repository support is GitHub only; public demo testing is enabled where safe.
 - Analysis runs immediately after import and can be manually refreshed.
-- V1 is desktop-first and does not include billing, full-gallery indexing, collaboration workspaces, score submission, or private-repository access.
+- V1 is desktop-first and does not include billing, collaboration workspaces, score submission, or private-repository access.

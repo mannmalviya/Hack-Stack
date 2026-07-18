@@ -1,4 +1,5 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
+import type { PgUpdateSetSource } from "drizzle-orm/pg-core";
 
 import { db } from "@/db";
 import { hackathons, projectEmbeddingSources, projects } from "@/db/schema";
@@ -7,6 +8,7 @@ import {
   type GalleryProject,
   type ScrapedProject,
   normalizeHackathonUrl,
+  normalizeProjectUrl,
   parseGalleryPage,
   parseHackathonPage,
   parseProjectPage,
@@ -57,7 +59,8 @@ export type ImportProgress =
 type ImportOptions = {
   limit?: ImportLimit;
   concurrency?: number;
-  onProgress?: (progress: ImportProgress) => void;
+  projectUrl?: string;
+  onProgress?: (progress: ImportProgress) => void | Promise<void>;
 };
 
 function fallbackProject(card: GalleryProject): ScrapedProject {
@@ -199,7 +202,13 @@ async function upsertProjects(hackathonId: string, scraped: ScrapeResult[]) {
 }
 
 export async function importHackathon(inputUrl: string, options: ImportOptions = {}) {
-  const limit = options.limit ?? 20;
+  const limit = options.limit ?? "all";
+  const requestedProjectUrl = options.projectUrl
+    ? normalizeProjectUrl(options.projectUrl)
+    : null;
+  if (options.projectUrl && !requestedProjectUrl) {
+    throw new Error("Project URL must use https://devpost.com/software/<project>");
+  }
   const concurrency = options.concurrency ?? 4;
   if (!IMPORT_LIMITS.some((candidate) => candidate === limit)) {
     throw new Error("Import limit must be 5, 10, 20, or all");
@@ -213,16 +222,26 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
   const firstGalleryHtml = await fetchHtml(source.galleryUrl, galleryGuard);
   const metadata = parseHackathonPage(firstGalleryHtml);
   const now = new Date().toISOString();
+  // A project-scoped import adds one submission to a gallery it does not own,
+  // and can run while a full import of the same hackathon is in flight. Only a
+  // full import may publish hackathon-wide indexing status and progress; a
+  // targeted run leaves those columns (and a new row's "queued" default) alone.
+  const ownsHackathonProgress = requestedProjectUrl === null;
+  const galleryIndexingState = ownsHackathonProgress
+    ? {
+      indexingStatus: "running",
+      indexingStage: "discovering_projects",
+      indexingProgressCompleted: 0,
+      indexingProgressTotal: metadata.projectCount,
+    }
+    : {};
   const [hackathon] = await db
     .insert(hackathons)
     .values({
       devpostUrl: source.devpostUrl,
       devpostSlug: source.devpostSlug,
       ...metadata,
-      indexingStatus: "running",
-      indexingStage: "discovering_projects",
-      indexingProgressCompleted: 0,
-      indexingProgressTotal: metadata.projectCount,
+      ...galleryIndexingState,
       updatedAt: now,
     })
     .onConflictDoUpdate({
@@ -230,10 +249,7 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
       set: {
         devpostUrl: source.devpostUrl,
         ...metadata,
-        indexingStatus: "running",
-        indexingStage: "discovering_projects",
-        indexingProgressCompleted: 0,
-        indexingProgressTotal: metadata.projectCount,
+        ...galleryIndexingState,
         updatedAt: now,
       },
     })
@@ -241,6 +257,15 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
       id: hackathons.id,
       coverImagePath: hackathons.coverImagePath,
     });
+
+  // Single place where hackathon-wide indexing status/progress is published, so
+  // a targeted import stays a no-op instead of stomping a concurrent full run.
+  async function publishHackathonProgress(
+    values: PgUpdateSetSource<typeof hackathons>,
+  ) {
+    if (!ownsHackathonProgress) return;
+    await db.update(hackathons).set(values).where(eq(hackathons.id, hackathon.id));
+  }
 
   let imageFailures = 0;
   try {
@@ -270,34 +295,39 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
     let html = firstGalleryHtml;
     let page = 1;
 
-    while (limit === "all" || cards.length < limit) {
+    while (
+      requestedProjectUrl
+        ? !seen.has(requestedProjectUrl)
+        : limit === "all" || cards.length < limit
+    ) {
       const parsed = parseGalleryPage(html);
       for (const card of parsed.projects) {
         if (!seen.has(card.devpostUrl)) {
           seen.add(card.devpostUrl);
           cards.push(card);
         }
-        if (limit !== "all" && cards.length === limit) break;
+        if (!requestedProjectUrl && limit !== "all" && cards.length === limit) break;
       }
       const galleryProgressTotal = limit === "all"
         ? Math.max(cards.length, metadata.projectCount)
         : Math.max(cards.length, Math.min(limit, metadata.projectCount));
-      await db
-        .update(hackathons)
-        .set({
-          indexingStage: "discovering_projects",
-          indexingProgressCompleted: cards.length,
-          indexingProgressTotal: galleryProgressTotal,
-          updatedAt: new Date().toISOString(),
-        })
-        .where(eq(hackathons.id, hackathon.id));
-      options.onProgress?.({
+      await publishHackathonProgress({
+        indexingStage: "discovering_projects",
+        indexingProgressCompleted: cards.length,
+        indexingProgressTotal: galleryProgressTotal,
+        updatedAt: new Date().toISOString(),
+      });
+      await options.onProgress?.({
         type: "gallery",
         discovered: cards.length,
         total: galleryProgressTotal,
       });
 
-      if (!parsed.nextHref || (limit !== "all" && cards.length >= limit)) break;
+      if (
+        !parsed.nextHref
+        || (requestedProjectUrl && seen.has(requestedProjectUrl))
+        || (!requestedProjectUrl && limit !== "all" && cards.length >= limit)
+      ) break;
       page += 1;
       if (page > MAX_GALLERY_PAGES) {
         throw new Error(`Gallery pagination exceeded ${MAX_GALLERY_PAGES} pages`);
@@ -313,7 +343,12 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
     }
 
     if (cards.length === 0) throw new Error("No public projects were found in this gallery");
-    const selectedCards = limit === "all" ? cards : cards.slice(0, limit);
+    const selectedCards = requestedProjectUrl
+      ? cards.filter((card) => card.devpostUrl === requestedProjectUrl)
+      : limit === "all" ? cards : cards.slice(0, limit);
+    if (requestedProjectUrl && selectedCards.length === 0) {
+      throw new Error("The requested project was not found in its hackathon gallery");
+    }
     const existingProjects = await db
       .select({
         devpostSlug: projects.devpostSlug,
@@ -332,15 +367,12 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
     const projectsToProcess = selectedCards.filter((card) =>
       shouldProcessProject(existingBySlug.get(card.devpostSlug))
     );
-    await db
-      .update(hackathons)
-      .set({
-        indexingStage: "scraping_projects",
-        indexingProgressCompleted: 0,
-        indexingProgressTotal: projectsToProcess.length,
-        updatedAt: new Date().toISOString(),
-      })
-      .where(eq(hackathons.id, hackathon.id));
+    await publishHackathonProgress({
+      indexingStage: "scraping_projects",
+      indexingProgressCompleted: 0,
+      indexingProgressTotal: projectsToProcess.length,
+      updatedAt: new Date().toISOString(),
+    });
     let detailFailures = 0;
     let completed = 0;
     const scraped = await mapConcurrent(projectsToProcess, concurrency, async (card) => {
@@ -371,14 +403,11 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
       }
       completed += 1;
       const progressUpdatedAt = new Date().toISOString();
-      await db
-        .update(hackathons)
-        .set({
-          indexingProgressCompleted: sql`greatest(${hackathons.indexingProgressCompleted}, ${completed})`,
-          updatedAt: progressUpdatedAt,
-        })
-        .where(eq(hackathons.id, hackathon.id));
-      options.onProgress?.({
+      await publishHackathonProgress({
+        indexingProgressCompleted: sql`greatest(${hackathons.indexingProgressCompleted}, ${completed})`,
+        updatedAt: progressUpdatedAt,
+      });
+      await options.onProgress?.({
         type: "project",
         completed,
         total: projectsToProcess.length,
@@ -403,28 +432,22 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
     const githubProjects = persistedProjects.filter(
       (project): project is typeof project & { githubUrl: string } => Boolean(project.githubUrl),
     );
-    await db
-      .update(hackathons)
-      .set({
-        indexingStage: "ingesting_repositories",
-        indexingProgressCompleted: 0,
-        indexingProgressTotal: githubProjects.length,
-        updatedAt: new Date().toISOString(),
-      })
-      .where(eq(hackathons.id, hackathon.id));
+    await publishHackathonProgress({
+      indexingStage: "ingesting_repositories",
+      indexingProgressCompleted: 0,
+      indexingProgressTotal: githubProjects.length,
+      updatedAt: new Date().toISOString(),
+    });
     let completedGithubProjects = 0;
     const githubResults = await ingestProjectGithubRepositories(githubProjects, {
       async onProjectComplete(result) {
         completedGithubProjects += 1;
         const progressUpdatedAt = new Date().toISOString();
-        await db
-          .update(hackathons)
-          .set({
-            indexingProgressCompleted: sql`greatest(${hackathons.indexingProgressCompleted}, ${completedGithubProjects})`,
-            updatedAt: progressUpdatedAt,
-          })
-          .where(eq(hackathons.id, hackathon.id));
-        options.onProgress?.({
+        await publishHackathonProgress({
+          indexingProgressCompleted: sql`greatest(${hackathons.indexingProgressCompleted}, ${completedGithubProjects})`,
+          updatedAt: progressUpdatedAt,
+        });
+        await options.onProgress?.({
           type: "github",
           completed: completedGithubProjects,
           total: githubProjects.length,
@@ -466,22 +489,22 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
     const githubFailures = githubResults.filter((result) => result.status === "failed").length;
     const githubPartials = githubResults.filter((result) => result.status === "partial").length;
     const sourceSnapshotAt = new Date().toISOString();
-    await db
-      .update(hackathons)
-      .set({
-        indexingStage: "calculating_hacker_insights",
-        indexingProgressCompleted: 0,
-        indexingProgressTotal: 1,
-        lastIndexedAt: sourceSnapshotAt,
-        updatedAt: sourceSnapshotAt,
-      })
-      .where(eq(hackathons.id, hackathon.id));
-    options.onProgress?.({ type: "insights", status: "running", error: null });
+    // lastIndexedAt means "the gallery was walked at", so only a full import
+    // advances it. Insights still recompute below on every import, targeted or
+    // not, because adding a single project changes the hackathon-wide numbers.
+    await publishHackathonProgress({
+      indexingStage: "calculating_hacker_insights",
+      indexingProgressCompleted: 0,
+      indexingProgressTotal: 1,
+      lastIndexedAt: sourceSnapshotAt,
+      updatedAt: sourceSnapshotAt,
+    });
+    await options.onProgress?.({ type: "insights", status: "running", error: null });
     const insightResult = await calculateHackerInsights({
       hackathonId: hackathon.id,
       sourceLastIndexedAt: sourceSnapshotAt,
     });
-    options.onProgress?.({
+    await options.onProgress?.({
       type: "insights",
       status: insightResult.status,
       error: insightResult.error,
@@ -496,17 +519,14 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
       ? "partial"
       : "succeeded";
     const completedAt = new Date().toISOString();
-    await db
-      .update(hackathons)
-      .set({
-        indexingStatus: status,
-        indexingStage: null,
-        indexingProgressCompleted: githubResults.length,
-        indexingProgressTotal: githubProjects.length,
-        lastIndexedAt: sourceSnapshotAt,
-        updatedAt: completedAt,
-      })
-      .where(eq(hackathons.id, hackathon.id));
+    await publishHackathonProgress({
+      indexingStatus: status,
+      indexingStage: null,
+      indexingProgressCompleted: githubResults.length,
+      indexingProgressTotal: githubProjects.length,
+      lastIndexedAt: sourceSnapshotAt,
+      updatedAt: completedAt,
+    });
 
     return {
       hackathonId: hackathon.id,
@@ -522,14 +542,13 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
       availableProjects: metadata.projectCount,
     };
   } catch (error) {
-    await db
-      .update(hackathons)
-      .set({
-        indexingStatus: "failed",
-        indexingStage: null,
-        updatedAt: new Date().toISOString(),
-      })
-      .where(eq(hackathons.id, hackathon.id));
+    // A targeted import failing says nothing about the gallery as a whole, so it
+    // must not mark the hackathon failed; the caller records the request failure.
+    await publishHackathonProgress({
+      indexingStatus: "failed",
+      indexingStage: null,
+      updatedAt: new Date().toISOString(),
+    });
     throw error;
   }
 }

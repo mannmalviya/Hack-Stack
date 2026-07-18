@@ -154,6 +154,20 @@ export function normalizeProjectUrl(input: string) {
   }
 }
 
+export function parseProjectHackathonUrl(html: string) {
+  const $ = cheerio.load(html);
+  for (const anchor of $("#submissions a[href]").toArray()) {
+    const href = $(anchor).attr("href");
+    if (!href) continue;
+    try {
+      return normalizeHackathonUrl(href).devpostUrl;
+    } catch {
+      // A project can contain unrelated links; only event subdomains qualify.
+    }
+  }
+  throw new Error("The Devpost project is not linked to a public hackathon");
+}
+
 function parseEventJsonLd($: cheerio.CheerioAPI): EventJsonLd {
   const raw = $("#challenge-json-ld").text().trim();
   if (!raw) throw new Error("Devpost event metadata was not found");
