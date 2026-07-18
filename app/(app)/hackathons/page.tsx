@@ -21,8 +21,7 @@ export default async function HackathonsPage() {
     <div className="space-y-10">
       <Reveal as="section" className="flex flex-col gap-6 border-b border-border pb-8 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-text">Judge workspace</p>
-          <h1 className="mt-3 text-4xl font-semibold tracking-[-0.045em] sm:text-6xl">Hackathons</h1>
+          <h1 className="text-4xl font-semibold tracking-[-0.045em] sm:text-6xl">Hackathons</h1>
           <p className="mt-4 max-w-2xl text-sm leading-6 text-muted">
             Browse approved hackathons, open a project set, and review the evidence behind each submission.
           </p>

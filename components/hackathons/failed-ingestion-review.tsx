@@ -4,6 +4,7 @@ import { ChevronDown, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { InsightSectionHeading } from "@/components/hackathons/insight-section-heading";
 import type { FailedProjectInsight } from "@/lib/data/hackathon-insights";
 
 const REVIEW_ID = "failed-ingestion-review";
@@ -67,23 +68,12 @@ export function FailedIngestionReview({
       aria-labelledby="data-quality-heading"
       className="scroll-mt-24 border-t border-border pt-10"
     >
-      <div className="mb-6">
-        <h2
-          id="data-quality-heading"
-          className="text-xl font-semibold tracking-[-0.03em] sm:text-2xl"
-        >
-          <span
-            className="mr-3 font-mono text-xs font-normal tabular-nums text-accent-text"
-            aria-hidden="true"
-          >
-            05
-          </span>
-          Data quality and manual review
-        </h2>
-        <p className="mt-2 max-w-3xl text-xs leading-5 text-muted">
-          Review projects whose latest ingestion failed. Error messages are preserved from the ingestion pipeline.
-        </p>
-      </div>
+      <InsightSectionHeading
+        id="data-quality-heading"
+        index="05"
+        title="Data quality and manual review"
+        description="Review projects whose latest ingestion failed. Error messages are preserved from the ingestion pipeline."
+      />
 
       <details
         open={open}

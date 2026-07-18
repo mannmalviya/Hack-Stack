@@ -5,6 +5,7 @@ import {
   FailedIngestionLink,
   FailedIngestionReview,
 } from "@/components/hackathons/failed-ingestion-review";
+import { InsightSectionHeading } from "@/components/hackathons/insight-section-heading";
 import { TechnologyList } from "@/components/hackathons/technology-list";
 import { AgentLogo } from "@/components/icons/agent-logos";
 import { AnimatedBar } from "@/components/motion/animated-bar";
@@ -98,30 +99,6 @@ function EmptyPanel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function SectionHeading({
-  id,
-  index,
-  title,
-  description,
-}: {
-  id: string;
-  index: string;
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="mb-6">
-      <h2 id={id} className="text-xl font-semibold tracking-[-0.03em] sm:text-2xl">
-        <span className="mr-3 font-mono text-xs font-normal tabular-nums text-accent-text" aria-hidden="true">
-          {index}
-        </span>
-        {title}
-      </h2>
-      <p className="mt-2 max-w-3xl text-xs leading-5 text-muted">{description}</p>
-    </div>
-  );
-}
-
 export function HackathonInsightsOverview({
   insights,
   hackathonSlug,
@@ -136,7 +113,7 @@ export function HackathonInsightsOverview({
     <div className="space-y-12">
       <section aria-labelledby="coverage-heading">
         <Reveal>
-          <SectionHeading
+          <InsightSectionHeading
             id="coverage-heading"
             index="01"
             title="Hackathon snapshot"
@@ -161,7 +138,7 @@ export function HackathonInsightsOverview({
 
       <section aria-labelledby="technology-heading" className="border-t border-border pt-10">
         <Reveal>
-          <SectionHeading
+          <InsightSectionHeading
             id="technology-heading"
             index="02"
             title="Technology landscape"
@@ -193,7 +170,7 @@ export function HackathonInsightsOverview({
 
       <section aria-labelledby="agents-heading" className="border-t border-border pt-10">
         <Reveal>
-          <SectionHeading
+          <InsightSectionHeading
             id="agents-heading"
             index="03"
             title="AI coding-agent signals"
@@ -239,7 +216,7 @@ export function HackathonInsightsOverview({
 
       <section aria-labelledby="size-heading" className="border-t border-border pt-10">
         <Reveal>
-          <SectionHeading
+          <InsightSectionHeading
             id="size-heading"
             index="04"
             title="Codebase size comparison"
