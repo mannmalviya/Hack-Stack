@@ -34,6 +34,14 @@ const COMMIT_HISTORY_QUERY = `
                 email
                 user { databaseId login }
               }
+              authors(first: 100) {
+                totalCount
+                nodes {
+                  name
+                  email
+                  user { databaseId login }
+                }
+              }
             }
             pageInfo { hasNextPage endCursor }
           }
@@ -62,11 +70,27 @@ type CommitHistoryResponse = {
             email: string | null;
             user: { databaseId: number | string | null; login: string } | null;
           } | null;
+          authors?: {
+            totalCount: number;
+            nodes: Array<{
+              name: string | null;
+              email: string | null;
+              user: { databaseId: number | string | null; login: string } | null;
+            }>;
+          };
         }>;
         pageInfo: { hasNextPage: boolean; endCursor: string | null };
       };
     } | null;
   } | null;
+};
+
+export type CollectedCommitAuthor = {
+  name: string;
+  email: string | null;
+  githubUserId: number | null;
+  githubLogin: string | null;
+  isPrimary: boolean;
 };
 
 export type CollectedCommit = {
@@ -82,6 +106,7 @@ export type CollectedCommit = {
   additions: number;
   deletions: number;
   changedFiles: number | null;
+  authors: CollectedCommitAuthor[];
 };
 
 export type CollectedFile = {
@@ -102,6 +127,7 @@ async function collectCommits(
   expression: string,
 ) {
   const commits: CollectedCommit[] = [];
+  const warnings: string[] = [];
   let cursor: string | null = null;
   let resolvedCommitSha: string | null = null;
 
@@ -119,6 +145,48 @@ async function collectCommits(
     for (const node of commit.history.nodes) {
       const githubUserId = node.author?.user?.databaseId;
       const parsedGithubUserId = githubUserId == null ? null : Number(githubUserId);
+      const returnedAuthors = node.authors?.nodes?.length
+        ? node.authors.nodes
+        : node.author
+          ? [node.author]
+          : [];
+      if (node.authors && node.authors.totalCount > node.authors.nodes.length) {
+        warnings.push(
+          `${node.oid} had more than 100 authors; only the first 100 were stored`,
+        );
+      }
+      const seenAuthors = new Set<string>();
+      const authors = returnedAuthors.flatMap((author) => {
+        const parsedUserId = author.user?.databaseId == null
+          ? null
+          : Number(author.user.databaseId);
+        const safeUserId = Number.isSafeInteger(parsedUserId) ? parsedUserId : null;
+        const name = author.name?.trim() || "Unknown";
+        const email = author.email?.trim() || null;
+        const identity = safeUserId !== null
+          ? `github:${safeUserId}`
+          : email
+            ? `email:${email.toLowerCase()}`
+            : `name:${name.toLowerCase()}`;
+        if (seenAuthors.has(identity)) return [];
+        seenAuthors.add(identity);
+        return [{
+          name,
+          email,
+          githubUserId: safeUserId,
+          githubLogin: safeUserId === null ? null : author.user?.login ?? null,
+          isPrimary: false,
+        } satisfies CollectedCommitAuthor];
+      }).map((author, index) => ({ ...author, isPrimary: index === 0 }));
+      if (authors.length === 0) {
+        authors.push({
+          name: "Unknown",
+          email: null,
+          githubUserId: null,
+          githubLogin: null,
+          isPrimary: true,
+        });
+      }
       commits.push({
         commitSha: node.oid,
         authorName: node.author?.name?.trim() || "Unknown",
@@ -134,6 +202,7 @@ async function collectCommits(
         additions: node.additions,
         deletions: node.deletions,
         changedFiles: node.changedFilesIfAvailable,
+        authors,
       });
     }
 
@@ -146,7 +215,7 @@ async function collectCommits(
   } while (cursor);
 
   if (!resolvedCommitSha) throw new Error(`No commits were found for ${owner}/${repo}`);
-  return { commits, resolvedCommitSha };
+  return { commits, resolvedCommitSha, warnings };
 }
 
 async function readManifest(
@@ -170,12 +239,13 @@ export async function collectGithubRepositoryData(input: {
 }) {
   const { client, owner, repo, defaultBranch } = input;
   const warnings: string[] = [];
-  const { commits, resolvedCommitSha } = await collectCommits(
+  const { commits, resolvedCommitSha, warnings: commitWarnings } = await collectCommits(
     client,
     owner,
     repo,
     defaultBranch,
   );
+  warnings.push(...commitWarnings);
   const treeResponse = await client.rest.git.getTree({
     owner,
     repo,

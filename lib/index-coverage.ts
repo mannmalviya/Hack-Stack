@@ -26,6 +26,17 @@ export function getIsFullyIndexed(
     && getIndexCoverage(indexedProjectCount, availableProjectCount) === "complete";
 }
 
+/** A project counts as processed even when scraping or GitHub ingestion failed. */
+export function getIsProcessingComplete(
+  indexingStatus: string,
+  processedProjectCount: number,
+  availableProjectCount: number | null,
+) {
+  const runReachedTheEnd = indexingStatus === "succeeded" || indexingStatus === "partial";
+  return runReachedTheEnd
+    && (availableProjectCount === null || processedProjectCount >= availableProjectCount);
+}
+
 export function getIsProjectIndexed(
   ingestionStatus: string,
   ingestionCompletedAt: string | null,

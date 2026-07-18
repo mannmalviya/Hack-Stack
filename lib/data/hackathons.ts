@@ -7,6 +7,7 @@ import { hackathons, projects } from "@/db/schema";
 import {
   getIndexCoverage,
   getIsFullyIndexed,
+  getIsProcessingComplete,
   type IndexCoverage,
 } from "@/lib/index-coverage";
 import { getHackathonCoverPublicUrl } from "@/lib/supabase/hackathon-covers";
@@ -17,7 +18,8 @@ export type IndexingStatus = "queued" | "running" | "succeeded" | "partial" | "f
 export type IndexingStage =
   | "discovering_projects"
   | "scraping_projects"
-  | "ingesting_repositories";
+  | "ingesting_repositories"
+  | "calculating_hacker_insights";
 
 export type HackathonListItem = {
   slug: string;
@@ -29,6 +31,7 @@ export type HackathonListItem = {
   startsAt: string | null;
   endsAt: string | null;
   availableProjectCount: number | null;
+  processedProjectCount: number;
   indexedProjectCount: number;
   indexCoverage: IndexCoverage;
   eventStatus: EventStatus;
@@ -37,6 +40,7 @@ export type HackathonListItem = {
   indexingProgressCompleted: number;
   indexingProgressTotal: number | null;
   isFullyIndexed: boolean;
+  isProcessingComplete: boolean;
   lastIndexedAt: string | null;
 };
 
@@ -85,6 +89,7 @@ const hackathonSelection = {
   startsAt: hackathons.startsAt,
   endsAt: hackathons.endsAt,
   availableProjectCount: hackathons.projectCount,
+  processedProjectCount: count(projects.id),
   indexedProjectCount: count(projects.ingestionCompletedAt),
   indexingStatus: hackathons.indexingStatus,
   indexingStage: hackathons.indexingStage,
@@ -103,6 +108,7 @@ type HackathonRow = {
   startsAt: string | null;
   endsAt: string | null;
   availableProjectCount: number | null;
+  processedProjectCount: number;
   indexedProjectCount: number;
   indexingStatus: string;
   indexingStage: string | null;
@@ -123,6 +129,11 @@ function mapHackathon(row: HackathonRow): HackathonListItem {
     isFullyIndexed: getIsFullyIndexed(
       row.indexingStatus,
       row.indexedProjectCount,
+      row.availableProjectCount,
+    ),
+    isProcessingComplete: getIsProcessingComplete(
+      row.indexingStatus,
+      row.processedProjectCount,
       row.availableProjectCount,
     ),
     eventStatus: getEventStatus(row.startsAt, row.endsAt),

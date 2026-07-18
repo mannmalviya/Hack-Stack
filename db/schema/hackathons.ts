@@ -61,7 +61,7 @@ export const hackathons = pgTable(
     ),
     check(
       "hackathons_indexing_stage_check",
-      sql`${table.indexingStage} is null or ${table.indexingStage} in ('discovering_projects', 'scraping_projects', 'ingesting_repositories')`,
+      sql`${table.indexingStage} is null or ${table.indexingStage} in ('discovering_projects', 'scraping_projects', 'ingesting_repositories', 'calculating_hacker_insights')`,
     ),
     check(
       "hackathons_indexing_progress_completed_nonnegative",

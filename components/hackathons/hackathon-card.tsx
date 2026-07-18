@@ -5,23 +5,21 @@ import { HackathonStageProgress } from "@/components/hackathons/hackathon-stage-
 import type {
   HackathonListItem,
   IndexingStage,
-  IndexingStatus,
 } from "@/lib/data/hackathons";
 import { formatIndexedProjectCount, indexCoverageLabels } from "@/lib/index-coverage";
-
-const indexingLabels: Record<IndexingStatus, string> = {
-  queued: "Import queued",
-  running: "Import in progress",
-  succeeded: "Last import succeeded",
-  partial: "Last import had issues",
-  failed: "Last import failed",
-};
 
 const stageLabels: Record<IndexingStage, string> = {
   discovering_projects: "Discovering projects",
   scraping_projects: "Scraping projects",
   ingesting_repositories: "Ingesting GitHub repositories",
+  calculating_hacker_insights: "Calculating Hacker Insights",
 };
+
+function remainingUnit(stage: IndexingStage | null) {
+  if (stage === "ingesting_repositories") return "repositories";
+  if (stage === "calculating_hacker_insights") return "calculations";
+  return "projects";
+}
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
   month: "short",
@@ -48,20 +46,12 @@ export function HackathonCard({ hackathon, index }: { hackathon: HackathonListIt
   const runningLabel = hackathon.indexingStage
     ? stageLabels[hackathon.indexingStage]
     : "Indexing hackathon";
-  const settledLabel = hackathon.isFullyIndexed
-    ? "Completed"
-    : hackathon.indexingStatus === "queued"
-      ? "Queued"
-      : hackathon.indexingStatus === "failed"
-        ? "Failed"
-        : "Incomplete";
+  const settledLabel = hackathon.isProcessingComplete ? "Complete" : "Incomplete";
   const indexingSummary = isRunning
     ? `${runningLabel}${progress ? ` ${progress}` : ""}`
-    : hackathon.isFullyIndexed
-      ? "All public projects and repositories indexed"
-      : hackathon.indexCoverage !== "complete"
-        ? "Full project coverage not yet indexed"
-        : indexingLabels[hackathon.indexingStatus];
+    : hackathon.isProcessingComplete
+      ? "HackStack finished processing every project"
+      : "HackStack has not finished processing every project";
   return (
     <Link
       href={`/hackathons/${hackathon.slug}`}
@@ -104,11 +94,11 @@ export function HackathonCard({ hackathon, index }: { hackathon: HackathonListIt
             </span>
           ) : (
             <span className={`inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.14em] ${
-              hackathon.isFullyIndexed ? "text-accent-text" : "text-muted"
+              hackathon.isProcessingComplete ? "text-accent-text" : "text-muted"
             }`}>
               <span
                 aria-hidden="true"
-                className={`size-2 ${hackathon.isFullyIndexed ? "bg-accent" : "bg-muted/50"}`}
+                className={`size-2 ${hackathon.isProcessingComplete ? "bg-accent" : "bg-muted/50"}`}
               />
               {settledLabel}
             </span>
@@ -148,7 +138,7 @@ export function HackathonCard({ hackathon, index }: { hackathon: HackathonListIt
             ? `${Math.max(
                 hackathon.indexingProgressTotal - hackathon.indexingProgressCompleted,
                 0,
-              )} ${hackathon.indexingStage === "ingesting_repositories" ? "repositories" : "projects"} remaining`
+              )} ${remainingUnit(hackathon.indexingStage)} remaining`
             : indexingSummary}
         </p>
       </div>

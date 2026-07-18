@@ -1,10 +1,11 @@
-import { and, eq, ne, sql } from "drizzle-orm";
+import { and, eq, inArray, ne, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import {
   githubRepositories,
   projectRepositories,
   repositoryCommits,
+  repositoryCommitAuthors,
   repositoryDependencies,
   repositoryFiles,
   repositoryIngestionRuns,
@@ -163,7 +164,18 @@ async function persistCollectedData(
         .insert(repositoryCommits)
         .values(batch.map((commit) => ({
           projectRepositoryId,
-          ...commit,
+          commitSha: commit.commitSha,
+          authorName: commit.authorName,
+          authorEmail: commit.authorEmail,
+          authorGithubUserId: commit.authorGithubUserId,
+          authorGithubLogin: commit.authorGithubLogin,
+          authoredAt: commit.authoredAt,
+          committedAt: commit.committedAt,
+          message: commit.message,
+          parentShas: commit.parentShas,
+          additions: commit.additions,
+          deletions: commit.deletions,
+          changedFiles: commit.changedFiles,
         })))
         .onConflictDoUpdate({
           target: [repositoryCommits.projectRepositoryId, repositoryCommits.commitSha],
@@ -181,6 +193,44 @@ async function persistCollectedData(
             changedFiles: sql`excluded.changed_files`,
           },
         });
+    }
+
+    const storedCommits = [];
+    for (const batch of batches(collected.commits)) {
+      storedCommits.push(...await tx
+        .select({ id: repositoryCommits.id, sha: repositoryCommits.commitSha })
+        .from(repositoryCommits)
+        .where(and(
+          eq(repositoryCommits.projectRepositoryId, projectRepositoryId),
+          inArray(repositoryCommits.commitSha, batch.map((commit) => commit.commitSha)),
+        )));
+    }
+    const commitIdBySha = new Map(storedCommits.map((commit) => [commit.sha, commit.id]));
+    for (const batch of batches(storedCommits)) {
+      await tx
+        .delete(repositoryCommitAuthors)
+        .where(inArray(
+          repositoryCommitAuthors.repositoryCommitId,
+          batch.map((commit) => commit.id),
+        ));
+    }
+    const authorRows = collected.commits.flatMap((commit) => {
+      const repositoryCommitId = commitIdBySha.get(commit.commitSha);
+      if (repositoryCommitId === undefined) {
+        throw new Error(`Stored commit ${commit.commitSha} could not be resolved`);
+      }
+      return commit.authors.map((author, authorPosition) => ({
+        repositoryCommitId,
+        authorPosition,
+        isPrimary: author.isPrimary,
+        authorName: author.name,
+        authorEmail: author.email,
+        authorGithubUserId: author.githubUserId,
+        authorGithubLogin: author.githubLogin,
+      }));
+    });
+    for (const batch of batches(authorRows)) {
+      await tx.insert(repositoryCommitAuthors).values(batch);
     }
 
     for (const batch of batches(collected.files)) {

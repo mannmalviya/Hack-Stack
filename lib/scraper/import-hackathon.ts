@@ -22,6 +22,7 @@ import {
   ingestProjectGithubRepositories,
   type GithubIngestionResult,
 } from "@/lib/github/ingest";
+import { calculateHackerInsights } from "@/lib/insights/calculate-hacker-insights";
 
 export { IMPORT_LIMITS, type ImportLimit } from "./import-limits";
 
@@ -45,6 +46,11 @@ export type ImportProgress =
       name: string;
       status: GithubIngestionResult["status"];
       repository: string | null;
+      error: string | null;
+    }
+  | {
+      type: "insights";
+      status: "running" | "succeeded" | "failed";
       error: string | null;
     };
 
@@ -432,12 +438,34 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
     }
     const githubFailures = githubResults.filter((result) => result.status === "failed").length;
     const githubPartials = githubResults.filter((result) => result.status === "partial").length;
+    const sourceSnapshotAt = new Date().toISOString();
+    await db
+      .update(hackathons)
+      .set({
+        indexingStage: "calculating_hacker_insights",
+        indexingProgressCompleted: 0,
+        indexingProgressTotal: 1,
+        lastIndexedAt: sourceSnapshotAt,
+        updatedAt: sourceSnapshotAt,
+      })
+      .where(eq(hackathons.id, hackathon.id));
+    options.onProgress?.({ type: "insights", status: "running", error: null });
+    const insightResult = await calculateHackerInsights({
+      hackathonId: hackathon.id,
+      sourceLastIndexedAt: sourceSnapshotAt,
+    });
+    options.onProgress?.({
+      type: "insights",
+      status: insightResult.status,
+      error: insightResult.error,
+    });
     // Usable (imported) projects exclude both detail-scrape and GitHub failures.
     const importedProjects = persistedProjects.length - detailFailures - githubFailures;
     const status = detailFailures > 0
       || imageFailures > 0
       || githubFailures > 0
       || githubPartials > 0
+      || insightResult.status === "failed"
       ? "partial"
       : "succeeded";
     const completedAt = new Date().toISOString();
@@ -448,7 +476,7 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
         indexingStage: null,
         indexingProgressCompleted: githubResults.length,
         indexingProgressTotal: githubProjects.length,
-        lastIndexedAt: completedAt,
+        lastIndexedAt: sourceSnapshotAt,
         updatedAt: completedAt,
       })
       .where(eq(hackathons.id, hackathon.id));
@@ -463,6 +491,7 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
       githubRepositories: githubResults.length,
       failedGithubRepositories: githubFailures,
       partialGithubRepositories: githubPartials,
+      hackerInsights: insightResult.status,
       availableProjects: metadata.projectCount,
     };
   } catch (error) {

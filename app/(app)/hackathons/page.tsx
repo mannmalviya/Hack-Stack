@@ -13,7 +13,9 @@ export const metadata: Metadata = {
 
 export default async function HackathonsPage() {
   const hackathons = await getHackathons();
-  const indexedCount = hackathons.filter(({ isFullyIndexed }) => isFullyIndexed).length;
+  const completedCount = hackathons.filter(
+    ({ isProcessingComplete }) => isProcessingComplete,
+  ).length;
 
   return (
     <div className="space-y-10">
@@ -30,7 +32,7 @@ export default async function HackathonsPage() {
             <AnimatedNumber value={hackathons.length} className="font-medium text-foreground" /> records
           </span>
           <span className="px-3.5 py-2 tabular-nums">
-            <AnimatedNumber value={indexedCount} className="font-medium text-foreground" /> completed
+            <AnimatedNumber value={completedCount} className="font-medium text-foreground" /> completed
           </span>
         </div>
       </Reveal>

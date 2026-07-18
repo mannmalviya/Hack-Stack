@@ -39,12 +39,15 @@ async function main() {
           ].filter(Boolean);
           const suffix = issues.length > 0 ? ` (${issues.join("; ")})` : "";
           console.log(`[${progress.completed}/${progress.total}] ${progress.name}${suffix}`);
-        } else {
+        } else if (progress.type === "github") {
           const repository = progress.repository ? ` (${progress.repository})` : "";
           const error = progress.error ? `: ${progress.error}` : "";
           console.log(
             `[GitHub ${progress.completed}/${progress.total}] ${progress.name}${repository} — ${progress.status}${error}`,
           );
+        } else {
+          const error = progress.error ? `: ${progress.error}` : "";
+          console.log(`[Hacker Insights] ${progress.status}${error}`);
         }
       },
     });

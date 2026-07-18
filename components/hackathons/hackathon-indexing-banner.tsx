@@ -23,6 +23,11 @@ const stageDetails: Record<IndexingStage, { label: string; unit: string; descrip
     unit: "repositories",
     description: "Indexing repository files, commits, dependencies, and language data.",
   },
+  calculating_hacker_insights: {
+    label: "Calculating Hacker Insights",
+    unit: "calculation",
+    description: "Building the team and contributor leaderboards from the indexed commits.",
+  },
 };
 
 const stageExplanations: Record<IndexingStage, string> = {
@@ -32,6 +37,8 @@ const stageExplanations: Record<IndexingStage, string> = {
     "We are scraping this hackathon's project pages and storing the project details in the database. After every project has been scraped, the GitHub ingestion pipeline will start.",
   ingesting_repositories:
     "We are reading each project's GitHub repository through the GitHub API. Codebase details such as files, commits, dependencies, and languages are being stored in the database.",
+  calculating_hacker_insights:
+    "GitHub ingestion is complete. We are now calculating team and contributor activity for the official hackathon window and preparing the leaderboards.",
 };
 
 export function HackathonIndexingBanner({ hackathon }: { hackathon: HackathonListItem }) {
@@ -82,7 +89,7 @@ export function HackathonIndexingBanner({ hackathon }: { hackathon: HackathonLis
               width={40}
               height={40}
               unoptimized
-              className="-mt-1 size-10 shrink-0 object-contain [image-rendering:pixelated]"
+              className="mt-0.5 size-10 shrink-0 object-contain [image-rendering:pixelated]"
             />
           ) : (
             <LoaderCircle className="mt-0.5 shrink-0 animate-spin text-accent-text" size={20} aria-hidden="true" />

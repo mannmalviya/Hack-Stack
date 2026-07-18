@@ -5,9 +5,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { HackathonIndexingBanner } from "@/components/hackathons/hackathon-indexing-banner";
 import { HackathonInsightsOverview } from "@/components/hackathons/hackathon-insights";
+import { HackerInsights } from "@/components/hackathons/hacker-insights";
 import { ProjectGrid } from "@/components/projects/project-grid";
 import { getHackathonBySlug, getProjectsByHackathon } from "@/lib/data/hackathons";
 import { getHackathonInsights } from "@/lib/data/hackathon-insights";
+import { getHackerInsights } from "@/lib/data/hacker-insights";
 import { formatIndexedProjectCount, indexCoverageLabels } from "@/lib/index-coverage";
 
 export const dynamic = "force-dynamic";
@@ -36,10 +38,11 @@ export default async function HackathonPage({ params, searchParams }: PageProps)
   const activeView = view === "projects" || view === "hackers" ? view : "insights";
   const showProjects = activeView === "projects";
   const showHackerInsights = activeView === "hackers";
-  const [hackathon, projects, insights] = await Promise.all([
+  const [hackathon, projects, insights, hackerInsights] = await Promise.all([
     getHackathonBySlug(slug),
     showProjects ? getProjectsByHackathon(slug) : Promise.resolve(null),
     activeView === "insights" ? getHackathonInsights(slug) : Promise.resolve(null),
+    showHackerInsights ? getHackerInsights(slug) : Promise.resolve(null),
   ]);
 
   if (!hackathon) notFound();
@@ -143,11 +146,13 @@ export default async function HackathonPage({ params, searchParams }: PageProps)
           </div>
           <ProjectGrid projects={projects} hackathonSlug={slug} />
         </section>
-      ) : showHackerInsights ? (
-        <section aria-labelledby="hackers-insights-heading" className="border border-dashed border-border px-6 py-16 text-center">
-          <h2 id="hackers-insights-heading" className="text-xl font-semibold tracking-[-0.03em]">Hackers Insights</h2>
-          <p className="mt-2 text-xs text-muted">This view is ready for the insights we plan next.</p>
-        </section>
+      ) : showHackerInsights && hackerInsights ? (
+        <HackerInsights
+          data={hackerInsights}
+          hackathonSlug={slug}
+          indexingStage={hackathon.indexingStage}
+          indexingStatus={hackathon.indexingStatus}
+        />
       ) : insights ? (
         <HackathonInsightsOverview insights={insights} hackathonSlug={slug} />
       ) : null}

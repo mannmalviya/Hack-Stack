@@ -29,6 +29,21 @@ test("collects paginated commits, files, and manifest dependencies", async () =>
                   email: "alex@example.com",
                   user: { databaseId: 42, login: "alex" },
                 },
+                authors: {
+                  totalCount: secondPage ? 2 : 1,
+                  nodes: [
+                    {
+                      name: "Alex",
+                      email: "alex@example.com",
+                      user: { databaseId: 42, login: "alex" },
+                    },
+                    ...(secondPage ? [{
+                      name: "Sam",
+                      email: "sam@example.com",
+                      user: { databaseId: 84, login: "sam" },
+                    }] : []),
+                  ],
+                },
               }],
               pageInfo: {
                 hasNextPage: !secondPage,
@@ -73,6 +88,15 @@ test("collects paginated commits, files, and manifest dependencies", async () =>
   assert.deepEqual(cursors, [null, "page-2"]);
   assert.equal(collected.resolvedCommitSha, "head-sha");
   assert.equal(collected.commits.length, 2);
+  assert.deepEqual(collected.commits[0].authors, [{
+    name: "Alex",
+    email: "alex@example.com",
+    githubUserId: 42,
+    githubLogin: "alex",
+    isPrimary: true,
+  }]);
+  assert.equal(collected.commits[1].authors.length, 2);
+  assert.equal(collected.commits[1].authors[1].githubLogin, "sam");
   assert.deepEqual(collected.files.map((file) => file.path), ["src/index.ts", "package.json"]);
   assert.deepEqual(collected.dependencies, [{
     ecosystem: "npm",
