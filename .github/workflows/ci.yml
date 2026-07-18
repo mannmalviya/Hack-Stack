@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm test
+
+      # Fails if the Drizzle schema and supabase/migrations have drifted apart.
+      - name: Check migration consistency
+        run: npm run db:check
+        env:
+          DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/ci
+
+      # db/index.ts throws at module evaluation when DATABASE_URL is absent, and
+      # `/` collects page data at build time, so the build needs these set.
+      # Every route is dynamic, so no real connection is opened here and
+      # placeholder values are sufficient to type-check and compile.
+      - name: Build
+        run: npm run build
+        env:
+          DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/ci
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: placeholder

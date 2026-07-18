@@ -1,0 +1,57 @@
+name: Deploy
+
+# Applies database migrations and deploys Trigger.dev tasks.
+# The Next.js app itself is deployed by Vercel's Git integration, not here.
+#
+# Ordering caveat: Vercel starts building the moment the push lands, so the app
+# can go live before `migrate` finishes. Keep migrations additive and backwards
+# compatible with the previous app version, or gate the Vercel deploy behind
+# this workflow (see DEPLOYMENT.md).
+
+on:
+  push:
+    branches: [main, develop]
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.109.1
+
+      - name: Push migrations
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          supabase link --project-ref "$PROJECT_REF"
+          supabase db push
+
+  deploy-tasks:
+    needs: migrate
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Deploy Trigger.dev tasks
+        env:
+          TRIGGER_ACCESS_TOKEN: ${{ secrets.TRIGGER_ACCESS_TOKEN }}
+          TRIGGER_PROJECT_REF: ${{ secrets.TRIGGER_PROJECT_REF }}
+        run: npx trigger.dev@4.5.4 deploy --env ${{ github.ref_name == 'main' && 'prod' || 'staging' }}
