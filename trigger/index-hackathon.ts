@@ -1,12 +1,18 @@
-import { task } from "@trigger.dev/sdk";
+import { queue, task } from "@trigger.dev/sdk";
 
 import { processHackathonIndexingRequest } from "@/lib/indexing/process-hackathon-request";
 import { markIndexingRequestFailed } from "@/lib/indexing/request-progress";
 
 type IndexHackathonPayload = { requestId: string };
 
+const hackathonIndexingQueue = queue({
+  name: "hackathon-indexing-request",
+  concurrencyLimit: 1,
+});
+
 export const indexDevpostHackathon = task({
   id: "index-devpost-hackathon",
+  queue: hackathonIndexingQueue,
   maxDuration: 3600,
   retry: { maxAttempts: 3 },
   // Fires only once every retry is exhausted, so an attempt that fails and is

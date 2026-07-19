@@ -13,6 +13,7 @@
     "db:generate": "drizzle-kit generate --prefix=supabase",
     "db:studio": "drizzle-kit studio",
     "trigger:dev": "trigger dev start",
+    "requests:approve": "tsx scripts/approve-hackathon-request.ts",
     "scrape:hackathon": "tsx scripts/scrape-hackathon.ts",
     "scrape:devpost": "node scripts/scrape-devpost-project.ts",
     "test": "tsx --test tests/**/*.test.ts"

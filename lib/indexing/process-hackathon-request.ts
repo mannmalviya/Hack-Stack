@@ -2,6 +2,10 @@ import { eq } from "drizzle-orm";
 
 import { db } from "@/db";
 import { hackathons, indexingRequests } from "@/db/schema";
+import {
+  shouldProcessHackathonRequest,
+  type ApprovalStatus,
+} from "@/lib/indexing/admin-approval";
 import { updateIndexingRequestProgress } from "@/lib/indexing/request-progress";
 import { importHackathon } from "@/lib/scraper/import-hackathon";
 
@@ -20,9 +24,8 @@ export async function processHackathonIndexingRequest(requestId: string) {
     throw new Error("Hackathon indexing request was not found");
   }
   if (request.status === "ready") return;
-  if (request.status === "pending") {
-    throw new Error("Hackathon request must be approved before indexing");
-  }
+  // A stale or duplicate dispatch must not bypass the admin approval state.
+  if (!shouldProcessHackathonRequest(request.status as ApprovalStatus)) return;
 
   await db
     .update(indexingRequests)
