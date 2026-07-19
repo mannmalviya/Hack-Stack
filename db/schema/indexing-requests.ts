@@ -62,7 +62,7 @@ export const indexingRequests = pgTable(
     index("indexing_requests_submitted_by_idx").on(table.submittedBy),
     index("indexing_requests_submitted_by_created_at_idx").on(
       table.submittedBy,
-      table.createdAt,
+      table.createdAt.desc(),
     ),
     index("indexing_requests_source_status_idx").on(
       table.sourceType,
@@ -75,7 +75,7 @@ export const indexingRequests = pgTable(
     // manage Supabase's auth schema. It is owned by the SQL migration.
     check(
       "indexing_requests_normalized_url_check",
-      sql`(source_type = 'hackathon' and normalized_url ~ '^https://[a-z0-9-]+\.devpost\.com/$') or (source_type = 'project' and normalized_url ~ '^https://devpost\.com/software/[^/?#]+$')`,
+      sql`(source_type = 'hackathon' and normalized_url ~ '^https://[a-z0-9-]+\\.devpost\\.com/$') or (source_type = 'project' and normalized_url ~ '^https://devpost\\.com/software/[^/?#]+$')`,
     ),
     check(
       "indexing_requests_source_type_check",
