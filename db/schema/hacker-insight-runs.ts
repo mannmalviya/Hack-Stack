@@ -73,7 +73,7 @@ export const hackerInsightRuns = privateSchema
       index("hacker_insight_runs_hackathon_status_completed_idx").on(
         table.hackathonId,
         table.status,
-        table.completedAt.desc(),
+        table.completedAt.desc().nullsFirst(),
       ),
     ],
   )

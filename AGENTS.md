@@ -34,7 +34,7 @@
 - `@supabase/supabase-js` + `@supabase/ssr` for browser/server auth clients and cookie-based sessions
 - Supabase Realtime for import and analysis progress
 - Supabase CLI migrations in `supabase/migrations`
-- Drizzle schema in `db/schema`; update it alongside every SQL migration
+- Drizzle schema in `db/schema` is the source of truth for database structure; SQL migrations are generated from it, never handwritten (see Database schema workflow below)
 - Row Level Security enabled on every exposed table
 
 ### Background Jobs
@@ -83,6 +83,16 @@
 - Use typed boundaries for imports, analysis jobs, evidence, verification runs, and AI-provider responses.
 - Put background import, analysis, and browser-verification work in a worker module/package; do not run long jobs in a page request.
 - Add concise, human-readable comments where they clarify intent, non-obvious logic, constraints, or tradeoffs; avoid comments that merely restate the code.
+
+## Database schema workflow
+
+- `db/schema/*.ts` is the only source of truth for database structure. Never hand-write or edit files in `supabase/migrations/` directly. Every migration must come from `npm run db:generate` (drizzle-kit), or `npx drizzle-kit generate --custom --prefix=supabase --name=<name>` for SQL Drizzle cannot express. Hand-writing migrations directly breaks drizzle-kit's own bookkeeping (`supabase/migrations/meta/`) silently — `drizzle-kit check` cannot detect drift it never recorded.
+- After editing `db/schema/*.ts`, run `npm run db:generate` and read the generated SQL before committing. drizzle-kit can silently mis-serialize raw `sql\`...\`` expressions (e.g. dropping backslashes out of a check-constraint regex) or simply omit something you assumed was declared. Never assume a generated migration is correct without reading it.
+- Verify locally before pushing: `supabase db reset` replays every migration against the local Docker Postgres. Use it to confirm the migration applies cleanly and to sanity-check the app against the result.
+- Use `--custom` migrations only for what Drizzle genuinely cannot express: grants, table/column comments, Realtime publication membership, one-off data backfills, and any foreign key into Supabase's protected `auth` schema (declaring that in Drizzle would make drizzle-kit try to manage the `auth` schema itself). Prefer `pgPolicy()` in the TS schema over a custom migration for new RLS policies.
+- NEVER run `supabase db reset --linked` against staging or production as part of normal work — it drops and replays the entire database from scratch. That's for exceptional recovery only, not routine schema changes.
+- Routine deploys don't need a manual `supabase db push`: pushing to `main`/`develop` triggers `.github/workflows/deploy.yml`, which runs `supabase db push` against production/staging automatically.
+- NEVER automatically push to develop or main branches!
 
 ## Verification
 

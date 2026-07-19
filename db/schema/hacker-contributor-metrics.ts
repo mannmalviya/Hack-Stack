@@ -3,7 +3,6 @@ import {
   bigint,
   check,
   foreignKey,
-  index,
   primaryKey,
   text,
   uuid,
@@ -42,10 +41,6 @@ export const hackerContributorMetrics = privateSchema
         foreignColumns: [hackerTeamMetrics.runId, hackerTeamMetrics.projectId],
         name: "hacker_contributor_metrics_team_fkey",
       }).onDelete("cascade"),
-      index("hacker_contributor_metrics_run_github_user_idx").on(
-        table.runId,
-        table.githubUserId,
-      ),
       check(
         "hacker_contributor_metrics_identity_check",
         sql`${table.githubUserId} > 0

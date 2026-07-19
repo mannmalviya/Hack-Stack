@@ -1,0 +1,2148 @@
+{
+  "id": "0470b206-fde3-4b00-a76f-204016153463",
+  "prevId": "f25211ab-7954-4e6d-9308-82e5a5448b0e",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "private.github_repositories": {
+      "name": "github_repositories",
+      "schema": "private",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "github_repositories_id_seq",
+            "schema": "private",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "github_repository_id": {
+          "name": "github_repository_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "github_node_id": {
+          "name": "github_node_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "owner_github_id": {
+          "name": "owner_github_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "owner_login": {
+          "name": "owner_login",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "owner_type": {
+          "name": "owner_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "full_name": {
+          "name": "full_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "html_url": {
+          "name": "html_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "default_branch": {
+          "name": "default_branch",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "visibility": {
+          "name": "visibility",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_fork": {
+          "name": "is_fork",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "parent_github_repository_id": {
+          "name": "parent_github_repository_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "archived": {
+          "name": "archived",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "disabled": {
+          "name": "disabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "github_created_at": {
+          "name": "github_created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "github_updated_at": {
+          "name": "github_updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "github_pushed_at": {
+          "name": "github_pushed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "api_etag": {
+          "name": "api_etag",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "metadata_fetched_at": {
+          "name": "metadata_fetched_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "github_repositories_full_name_idx": {
+          "name": "github_repositories_full_name_idx",
+          "columns": [
+            {
+              "expression": "lower(\"full_name\")",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "github_repositories_github_repository_id_unique": {
+          "name": "github_repositories_github_repository_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "github_repository_id"
+          ]
+        },
+        "github_repositories_github_node_id_unique": {
+          "name": "github_repositories_github_node_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "github_node_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "github_repositories_github_repository_id_positive": {
+          "name": "github_repositories_github_repository_id_positive",
+          "value": "\"private\".\"github_repositories\".\"github_repository_id\" > 0"
+        },
+        "github_repositories_owner_github_id_positive": {
+          "name": "github_repositories_owner_github_id_positive",
+          "value": "\"private\".\"github_repositories\".\"owner_github_id\" > 0"
+        },
+        "github_repositories_visibility_check": {
+          "name": "github_repositories_visibility_check",
+          "value": "\"private\".\"github_repositories\".\"visibility\" in ('public', 'private', 'internal')"
+        },
+        "github_repositories_owner_type_check": {
+          "name": "github_repositories_owner_type_check",
+          "value": "\"private\".\"github_repositories\".\"owner_type\" in ('User', 'Organization')"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.hackathons": {
+      "name": "hackathons",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "devpost_url": {
+          "name": "devpost_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "devpost_slug": {
+          "name": "devpost_slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "organizer": {
+          "name": "organizer",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cover_image_source_url": {
+          "name": "cover_image_source_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cover_image_path": {
+          "name": "cover_image_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cover_image_fetched_at": {
+          "name": "cover_image_fetched_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "starts_at": {
+          "name": "starts_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ends_at": {
+          "name": "ends_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "project_count": {
+          "name": "project_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "indexing_status": {
+          "name": "indexing_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'queued'"
+        },
+        "indexing_stage": {
+          "name": "indexing_stage",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "indexing_progress_completed": {
+          "name": "indexing_progress_completed",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "indexing_progress_total": {
+          "name": "indexing_progress_total",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_indexed_at": {
+          "name": "last_indexed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "hackathons_indexing_status_idx": {
+          "name": "hackathons_indexing_status_idx",
+          "columns": [
+            {
+              "expression": "indexing_status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "hackathons_devpost_url_unique": {
+          "name": "hackathons_devpost_url_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "devpost_url"
+          ]
+        },
+        "hackathons_devpost_slug_unique": {
+          "name": "hackathons_devpost_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "devpost_slug"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "hackathons_indexing_status_check": {
+          "name": "hackathons_indexing_status_check",
+          "value": "indexing_status = ANY (ARRAY['queued'::text, 'running'::text, 'succeeded'::text, 'partial'::text, 'failed'::text])"
+        },
+        "hackathons_indexing_stage_check": {
+          "name": "hackathons_indexing_stage_check",
+          "value": "\"hackathons\".\"indexing_stage\" is null or \"hackathons\".\"indexing_stage\" in ('discovering_projects', 'scraping_projects', 'ingesting_repositories', 'calculating_hacker_insights')"
+        },
+        "hackathons_indexing_progress_completed_nonnegative": {
+          "name": "hackathons_indexing_progress_completed_nonnegative",
+          "value": "\"hackathons\".\"indexing_progress_completed\" >= 0"
+        },
+        "hackathons_indexing_progress_total_nonnegative": {
+          "name": "hackathons_indexing_progress_total_nonnegative",
+          "value": "\"hackathons\".\"indexing_progress_total\" is null or \"hackathons\".\"indexing_progress_total\" >= 0"
+        },
+        "hackathons_indexing_progress_bounds": {
+          "name": "hackathons_indexing_progress_bounds",
+          "value": "\"hackathons\".\"indexing_progress_total\" is null or \"hackathons\".\"indexing_progress_completed\" <= \"hackathons\".\"indexing_progress_total\""
+        },
+        "hackathons_cover_image_storage_check": {
+          "name": "hackathons_cover_image_storage_check",
+          "value": "(cover_image_path is null and cover_image_fetched_at is null) or (nullif(btrim(cover_image_path), '') is not null and cover_image_fetched_at is not null)"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "private.hacker_contributor_metrics": {
+      "name": "hacker_contributor_metrics",
+      "schema": "private",
+      "columns": {
+        "run_id": {
+          "name": "run_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "github_user_id": {
+          "name": "github_user_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "github_login": {
+          "name": "github_login",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "credited_commit_count": {
+          "name": "credited_commit_count",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "credited_additions": {
+          "name": "credited_additions",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "credited_deletions": {
+          "name": "credited_deletions",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "hacker_contributor_metrics_team_fkey": {
+          "name": "hacker_contributor_metrics_team_fkey",
+          "tableFrom": "hacker_contributor_metrics",
+          "tableTo": "hacker_team_metrics",
+          "schemaTo": "private",
+          "columnsFrom": [
+            "run_id",
+            "project_id"
+          ],
+          "columnsTo": [
+            "run_id",
+            "project_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "hacker_contributor_metrics_pkey": {
+          "name": "hacker_contributor_metrics_pkey",
+          "columns": [
+            "run_id",
+            "project_id",
+            "github_user_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "hacker_contributor_metrics_identity_check": {
+          "name": "hacker_contributor_metrics_identity_check",
+          "value": "\"private\".\"hacker_contributor_metrics\".\"github_user_id\" > 0\n          and nullif(btrim(\"private\".\"hacker_contributor_metrics\".\"github_login\"), '') is not null\n          and nullif(btrim(\"private\".\"hacker_contributor_metrics\".\"display_name\"), '') is not null"
+        },
+        "hacker_contributor_metrics_nonnegative_check": {
+          "name": "hacker_contributor_metrics_nonnegative_check",
+          "value": "\"private\".\"hacker_contributor_metrics\".\"credited_commit_count\" >= 0\n          and \"private\".\"hacker_contributor_metrics\".\"credited_additions\" >= 0\n          and \"private\".\"hacker_contributor_metrics\".\"credited_deletions\" >= 0"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "private.hacker_insight_runs": {
+      "name": "hacker_insight_runs",
+      "schema": "private",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "hacker_insight_runs_id_seq",
+            "schema": "private",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "hackathon_id": {
+          "name": "hackathon_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_last_indexed_at": {
+          "name": "source_last_indexed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "window_starts_at": {
+          "name": "window_starts_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "window_ends_at": {
+          "name": "window_ends_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'queued'"
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "error_detail": {
+          "name": "error_detail",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "hacker_insight_runs_hackathon_status_completed_idx": {
+          "name": "hacker_insight_runs_hackathon_status_completed_idx",
+          "columns": [
+            {
+              "expression": "hackathon_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "completed_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "first"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "hacker_insight_runs_hackathon_id_fkey": {
+          "name": "hacker_insight_runs_hackathon_id_fkey",
+          "tableFrom": "hacker_insight_runs",
+          "tableTo": "hackathons",
+          "columnsFrom": [
+            "hackathon_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "hacker_insight_runs_source_unique": {
+          "name": "hacker_insight_runs_source_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "hackathon_id",
+            "source_last_indexed_at"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "hacker_insight_runs_status_check": {
+          "name": "hacker_insight_runs_status_check",
+          "value": "\"private\".\"hacker_insight_runs\".\"status\" in ('queued', 'running', 'succeeded', 'failed')"
+        },
+        "hacker_insight_runs_window_check": {
+          "name": "hacker_insight_runs_window_check",
+          "value": "\"private\".\"hacker_insight_runs\".\"window_ends_at\" >= \"private\".\"hacker_insight_runs\".\"window_starts_at\""
+        },
+        "hacker_insight_runs_lifecycle_check": {
+          "name": "hacker_insight_runs_lifecycle_check",
+          "value": "(\n          (\"private\".\"hacker_insight_runs\".\"status\" = 'queued' and \"private\".\"hacker_insight_runs\".\"started_at\" is null and \"private\".\"hacker_insight_runs\".\"completed_at\" is null and \"private\".\"hacker_insight_runs\".\"error_detail\" is null)\n          or (\"private\".\"hacker_insight_runs\".\"status\" = 'running' and \"private\".\"hacker_insight_runs\".\"started_at\" is not null and \"private\".\"hacker_insight_runs\".\"completed_at\" is null and \"private\".\"hacker_insight_runs\".\"error_detail\" is null)\n          or (\"private\".\"hacker_insight_runs\".\"status\" = 'succeeded' and \"private\".\"hacker_insight_runs\".\"started_at\" is not null and \"private\".\"hacker_insight_runs\".\"completed_at\" is not null and \"private\".\"hacker_insight_runs\".\"error_detail\" is null)\n          or (\"private\".\"hacker_insight_runs\".\"status\" = 'failed' and \"private\".\"hacker_insight_runs\".\"started_at\" is not null and \"private\".\"hacker_insight_runs\".\"completed_at\" is not null and nullif(btrim(\"private\".\"hacker_insight_runs\".\"error_detail\"), '') is not null)\n        )"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "private.hacker_team_metrics": {
+      "name": "hacker_team_metrics",
+      "schema": "private",
+      "columns": {
+        "run_id": {
+          "name": "run_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "commit_count": {
+          "name": "commit_count",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "additions": {
+          "name": "additions",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "deletions": {
+          "name": "deletions",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "hacker_team_metrics_run_id_fkey": {
+          "name": "hacker_team_metrics_run_id_fkey",
+          "tableFrom": "hacker_team_metrics",
+          "tableTo": "hacker_insight_runs",
+          "schemaTo": "private",
+          "columnsFrom": [
+            "run_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "hacker_team_metrics_project_id_fkey": {
+          "name": "hacker_team_metrics_project_id_fkey",
+          "tableFrom": "hacker_team_metrics",
+          "tableTo": "projects",
+          "columnsFrom": [
+            "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "hacker_team_metrics_pkey": {
+          "name": "hacker_team_metrics_pkey",
+          "columns": [
+            "run_id",
+            "project_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "hacker_team_metrics_nonnegative_check": {
+          "name": "hacker_team_metrics_nonnegative_check",
+          "value": "\"private\".\"hacker_team_metrics\".\"commit_count\" >= 0\n          and \"private\".\"hacker_team_metrics\".\"additions\" >= 0\n          and \"private\".\"hacker_team_metrics\".\"deletions\" >= 0"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.indexing_requests": {
+      "name": "indexing_requests",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "submitted_url": {
+          "name": "submitted_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "normalized_url": {
+          "name": "normalized_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_type": {
+          "name": "source_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "submitted_by": {
+          "name": "submitted_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "reviewed_at": {
+          "name": "reviewed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hackathon_id": {
+          "name": "hackathon_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "destination_path": {
+          "name": "destination_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "progress_stage": {
+          "name": "progress_stage",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "progress_completed": {
+          "name": "progress_completed",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "progress_total": {
+          "name": "progress_total",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "indexing_requests_hackathon_id_idx": {
+          "name": "indexing_requests_hackathon_id_idx",
+          "columns": [
+            {
+              "expression": "hackathon_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "uuid_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "indexing_requests_submitted_by_idx": {
+          "name": "indexing_requests_submitted_by_idx",
+          "columns": [
+            {
+              "expression": "submitted_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "indexing_requests_submitted_by_created_at_idx": {
+          "name": "indexing_requests_submitted_by_created_at_idx",
+          "columns": [
+            {
+              "expression": "submitted_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "indexing_requests_source_status_idx": {
+          "name": "indexing_requests_source_status_idx",
+          "columns": [
+            {
+              "expression": "source_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "indexing_requests_normalized_url_idx": {
+          "name": "indexing_requests_normalized_url_idx",
+          "columns": [
+            {
+              "expression": "normalized_url",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "indexing_requests_hackathon_id_fkey": {
+          "name": "indexing_requests_hackathon_id_fkey",
+          "tableFrom": "indexing_requests",
+          "tableTo": "hackathons",
+          "columnsFrom": [
+            "hackathon_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "indexing_requests_project_id_fkey": {
+          "name": "indexing_requests_project_id_fkey",
+          "tableFrom": "indexing_requests",
+          "tableTo": "projects",
+          "columnsFrom": [
+            "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "indexing_requests_normalized_url_check": {
+          "name": "indexing_requests_normalized_url_check",
+          "value": "(source_type = 'hackathon' and normalized_url ~ '^https://[a-z0-9-]+\\.devpost\\.com/$') or (source_type = 'project' and normalized_url ~ '^https://devpost\\.com/software/[^/?#]+$')"
+        },
+        "indexing_requests_source_type_check": {
+          "name": "indexing_requests_source_type_check",
+          "value": "source_type = ANY (ARRAY['hackathon'::text, 'project'::text])"
+        },
+        "indexing_requests_status_check": {
+          "name": "indexing_requests_status_check",
+          "value": "status = ANY (ARRAY['pending'::text, 'queued'::text, 'running'::text, 'ready'::text, 'rejected'::text, 'failed'::text])"
+        },
+        "indexing_requests_destination_path_check": {
+          "name": "indexing_requests_destination_path_check",
+          "value": "destination_path is null or destination_path like '/hackathons/%'"
+        },
+        "indexing_requests_progress_nonnegative_check": {
+          "name": "indexing_requests_progress_nonnegative_check",
+          "value": "progress_completed >= 0 and (progress_total is null or progress_total >= 0)"
+        },
+        "indexing_requests_progress_bounds_check": {
+          "name": "indexing_requests_progress_bounds_check",
+          "value": "progress_total is null or progress_completed <= progress_total"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "private.project_embedding_sources": {
+      "name": "project_embedding_sources",
+      "schema": "private",
+      "columns": {
+        "project_id": {
+          "name": "project_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "inspiration": {
+          "name": "inspiration",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "what_it_does": {
+          "name": "what_it_does",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "project_embedding_sources_project_id_fkey": {
+          "name": "project_embedding_sources_project_id_fkey",
+          "tableFrom": "project_embedding_sources",
+          "tableTo": "projects",
+          "columnsFrom": [
+            "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "project_embedding_sources_nonblank_check": {
+          "name": "project_embedding_sources_nonblank_check",
+          "value": "nullif(btrim(\"private\".\"project_embedding_sources\".\"inspiration\"), '') is not null\n          and nullif(btrim(\"private\".\"project_embedding_sources\".\"what_it_does\"), '') is not null"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "private.project_repositories": {
+      "name": "project_repositories",
+      "schema": "private",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "project_repositories_id_seq",
+            "schema": "private",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "repository_id": {
+          "name": "repository_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_url": {
+          "name": "source_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "project_repositories_repository_id_idx": {
+          "name": "project_repositories_repository_id_idx",
+          "columns": [
+            {
+              "expression": "repository_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "project_repositories_project_id_fkey": {
+          "name": "project_repositories_project_id_fkey",
+          "tableFrom": "project_repositories",
+          "tableTo": "projects",
+          "columnsFrom": [
+            "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "project_repositories_repository_id_fkey": {
+          "name": "project_repositories_repository_id_fkey",
+          "tableFrom": "project_repositories",
+          "tableTo": "github_repositories",
+          "schemaTo": "private",
+          "columnsFrom": [
+            "repository_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "project_repositories_project_repository_unique": {
+          "name": "project_repositories_project_repository_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "project_id",
+            "repository_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.projects": {
+      "name": "projects",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "hackathon_id": {
+          "name": "hackathon_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "devpost_url": {
+          "name": "devpost_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "devpost_slug": {
+          "name": "devpost_slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tagline": {
+          "name": "tagline",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cover_image_source_url": {
+          "name": "cover_image_source_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cover_image_path": {
+          "name": "cover_image_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cover_image_fetched_at": {
+          "name": "cover_image_fetched_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "demo_url": {
+          "name": "demo_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "video_url": {
+          "name": "video_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "github_url": {
+          "name": "github_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_winner": {
+          "name": "is_winner",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "winning_track": {
+          "name": "winning_track",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "team_data": {
+          "name": "team_data",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "built_with_data": {
+          "name": "built_with_data",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "ingestion_completed_at": {
+          "name": "ingestion_completed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ingestion_status": {
+          "name": "ingestion_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "ingestion_error": {
+          "name": "ingestion_error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "projects_hackathon_id_idx": {
+          "name": "projects_hackathon_id_idx",
+          "columns": [
+            {
+              "expression": "hackathon_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "uuid_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "projects_hackathon_id_fkey": {
+          "name": "projects_hackathon_id_fkey",
+          "tableFrom": "projects",
+          "tableTo": "hackathons",
+          "columnsFrom": [
+            "hackathon_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "projects_hackathon_slug_unique": {
+          "name": "projects_hackathon_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "hackathon_id",
+            "devpost_slug"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "projects_winner_track_check": {
+          "name": "projects_winner_track_check",
+          "value": "(\"projects\".\"is_winner\" and nullif(btrim(\"projects\".\"winning_track\"), '') is not null) or (not \"projects\".\"is_winner\" and \"projects\".\"winning_track\" is null)"
+        },
+        "projects_ingestion_status_check": {
+          "name": "projects_ingestion_status_check",
+          "value": "\"projects\".\"ingestion_status\" in ('pending', 'succeeded', 'partial', 'failed')"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "private.repository_commit_authors": {
+      "name": "repository_commit_authors",
+      "schema": "private",
+      "columns": {
+        "repository_commit_id": {
+          "name": "repository_commit_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "author_position": {
+          "name": "author_position",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_primary": {
+          "name": "is_primary",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "author_name": {
+          "name": "author_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "author_email": {
+          "name": "author_email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "author_github_user_id": {
+          "name": "author_github_user_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "author_github_login": {
+          "name": "author_github_login",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "repository_commit_authors_github_user_id_idx": {
+          "name": "repository_commit_authors_github_user_id_idx",
+          "columns": [
+            {
+              "expression": "author_github_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "repository_commit_authors_repository_commit_id_fkey": {
+          "name": "repository_commit_authors_repository_commit_id_fkey",
+          "tableFrom": "repository_commit_authors",
+          "tableTo": "repository_commits",
+          "schemaTo": "private",
+          "columnsFrom": [
+            "repository_commit_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "repository_commit_authors_pkey": {
+          "name": "repository_commit_authors_pkey",
+          "columns": [
+            "repository_commit_id",
+            "author_position"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "repository_commit_authors_position_check": {
+          "name": "repository_commit_authors_position_check",
+          "value": "\"private\".\"repository_commit_authors\".\"author_position\" >= 0\n          and \"private\".\"repository_commit_authors\".\"is_primary\" = (\"private\".\"repository_commit_authors\".\"author_position\" = 0)"
+        },
+        "repository_commit_authors_github_identity_check": {
+          "name": "repository_commit_authors_github_identity_check",
+          "value": "(\n          \"private\".\"repository_commit_authors\".\"author_github_user_id\" is null and \"private\".\"repository_commit_authors\".\"author_github_login\" is null\n        ) or (\n          \"private\".\"repository_commit_authors\".\"author_github_user_id\" > 0\n          and nullif(btrim(\"private\".\"repository_commit_authors\".\"author_github_login\"), '') is not null\n        )"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "private.repository_commits": {
+      "name": "repository_commits",
+      "schema": "private",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "repository_commits_id_seq",
+            "schema": "private",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "project_repository_id": {
+          "name": "project_repository_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "commit_sha": {
+          "name": "commit_sha",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "author_name": {
+          "name": "author_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "author_email": {
+          "name": "author_email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "author_github_user_id": {
+          "name": "author_github_user_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "author_github_login": {
+          "name": "author_github_login",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "authored_at": {
+          "name": "authored_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "committed_at": {
+          "name": "committed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "message": {
+          "name": "message",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "parent_shas": {
+          "name": "parent_shas",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::text[]"
+        },
+        "additions": {
+          "name": "additions",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deletions": {
+          "name": "deletions",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "changed_files": {
+          "name": "changed_files",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "repository_commits_project_repository_authored_at_idx": {
+          "name": "repository_commits_project_repository_authored_at_idx",
+          "columns": [
+            {
+              "expression": "project_repository_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "authored_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "repository_commits_project_repository_author_email_idx": {
+          "name": "repository_commits_project_repository_author_email_idx",
+          "columns": [
+            {
+              "expression": "project_repository_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "author_email",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "repository_commits_project_repository_id_fkey": {
+          "name": "repository_commits_project_repository_id_fkey",
+          "tableFrom": "repository_commits",
+          "tableTo": "project_repositories",
+          "schemaTo": "private",
+          "columnsFrom": [
+            "project_repository_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "repository_commits_project_repository_sha_unique": {
+          "name": "repository_commits_project_repository_sha_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "project_repository_id",
+            "commit_sha"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "repository_commits_additions_nonnegative": {
+          "name": "repository_commits_additions_nonnegative",
+          "value": "\"private\".\"repository_commits\".\"additions\" is null or \"private\".\"repository_commits\".\"additions\" >= 0"
+        },
+        "repository_commits_deletions_nonnegative": {
+          "name": "repository_commits_deletions_nonnegative",
+          "value": "\"private\".\"repository_commits\".\"deletions\" is null or \"private\".\"repository_commits\".\"deletions\" >= 0"
+        },
+        "repository_commits_changed_files_nonnegative": {
+          "name": "repository_commits_changed_files_nonnegative",
+          "value": "\"private\".\"repository_commits\".\"changed_files\" is null or \"private\".\"repository_commits\".\"changed_files\" >= 0"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "private.repository_dependencies": {
+      "name": "repository_dependencies",
+      "schema": "private",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "repository_dependencies_id_seq",
+            "schema": "private",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "project_repository_id": {
+          "name": "project_repository_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ecosystem": {
+          "name": "ecosystem",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "package_name": {
+          "name": "package_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "version_constraint": {
+          "name": "version_constraint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dependency_kind": {
+          "name": "dependency_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "manifest_path": {
+          "name": "manifest_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "indexed_commit_sha": {
+          "name": "indexed_commit_sha",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "repository_dependencies_project_package_idx": {
+          "name": "repository_dependencies_project_package_idx",
+          "columns": [
+            {
+              "expression": "project_repository_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "package_name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "repository_dependencies_ecosystem_package_idx": {
+          "name": "repository_dependencies_ecosystem_package_idx",
+          "columns": [
+            {
+              "expression": "ecosystem",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "package_name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "repository_dependencies_project_repository_id_fkey": {
+          "name": "repository_dependencies_project_repository_id_fkey",
+          "tableFrom": "repository_dependencies",
+          "tableTo": "project_repositories",
+          "schemaTo": "private",
+          "columnsFrom": [
+            "project_repository_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "repository_dependencies_identity_unique": {
+          "name": "repository_dependencies_identity_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "project_repository_id",
+            "ecosystem",
+            "manifest_path",
+            "package_name",
+            "dependency_kind"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "private.repository_files": {
+      "name": "repository_files",
+      "schema": "private",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "repository_files_id_seq",
+            "schema": "private",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "project_repository_id": {
+          "name": "project_repository_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "path": {
+          "name": "path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "blob_sha": {
+          "name": "blob_sha",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "indexed_commit_sha": {
+          "name": "indexed_commit_sha",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "language": {
+          "name": "language",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "size_bytes": {
+          "name": "size_bytes",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "line_count": {
+          "name": "line_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_binary": {
+          "name": "is_binary",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "repository_files_project_repository_language_idx": {
+          "name": "repository_files_project_repository_language_idx",
+          "columns": [
+            {
+              "expression": "project_repository_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "language",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "repository_files_project_repository_id_fkey": {
+          "name": "repository_files_project_repository_id_fkey",
+          "tableFrom": "repository_files",
+          "tableTo": "project_repositories",
+          "schemaTo": "private",
+          "columnsFrom": [
+            "project_repository_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "repository_files_project_repository_path_unique": {
+          "name": "repository_files_project_repository_path_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "project_repository_id",
+            "path"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "repository_files_size_bytes_nonnegative": {
+          "name": "repository_files_size_bytes_nonnegative",
+          "value": "\"private\".\"repository_files\".\"size_bytes\" >= 0"
+        },
+        "repository_files_line_count_nonnegative": {
+          "name": "repository_files_line_count_nonnegative",
+          "value": "\"private\".\"repository_files\".\"line_count\" is null or \"private\".\"repository_files\".\"line_count\" >= 0"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "private.repository_ingestion_runs": {
+      "name": "repository_ingestion_runs",
+      "schema": "private",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "repository_ingestion_runs_id_seq",
+            "schema": "private",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "project_repository_id": {
+          "name": "project_repository_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'queued'"
+        },
+        "requested_ref": {
+          "name": "requested_ref",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "resolved_commit_sha": {
+          "name": "resolved_commit_sha",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "error_detail": {
+          "name": "error_detail",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "repository_ingestion_runs_project_repository_created_at_idx": {
+          "name": "repository_ingestion_runs_project_repository_created_at_idx",
+          "columns": [
+            {
+              "expression": "project_repository_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "repository_ingestion_runs_status_created_at_idx": {
+          "name": "repository_ingestion_runs_status_created_at_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "repository_ingestion_runs_project_repository_id_fkey": {
+          "name": "repository_ingestion_runs_project_repository_id_fkey",
+          "tableFrom": "repository_ingestion_runs",
+          "tableTo": "project_repositories",
+          "schemaTo": "private",
+          "columnsFrom": [
+            "project_repository_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "repository_ingestion_runs_status_check": {
+          "name": "repository_ingestion_runs_status_check",
+          "value": "\"private\".\"repository_ingestion_runs\".\"status\" in ('queued', 'running', 'succeeded', 'partial', 'failed')"
+        }
+      },
+      "isRLSEnabled": true
+    }
+  },
+  "enums": {},
+  "schemas": {
+    "private": "private"
+  },
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

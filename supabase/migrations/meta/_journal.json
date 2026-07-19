@@ -15,6 +15,20 @@
       "when": 1784491214138,
       "tag": "20260719200014_rls_grants_comments",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784494275335,
+      "tag": "20260719205115_fix_index_regressions",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1784494311414,
+      "tag": "20260719205151_restore_grant_revoke_parity",
+      "breakpoints": true
     }
   ]
 }
