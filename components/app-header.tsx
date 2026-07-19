@@ -1,7 +1,7 @@
-import { LogIn } from "lucide-react";
 import Link from "next/link";
 import { Brand } from "@/components/brand";
 import { CommandMenu } from "@/components/command-menu";
+import { HeaderAuth } from "@/components/header-auth";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export function AppHeader() {
@@ -15,9 +15,7 @@ export function AppHeader() {
             + Index Projects
           </Link>
           <ThemeToggle />
-          <Link href="/login" aria-label="Sign in" className="flex h-8 items-center gap-1.5 px-2 text-xs font-medium text-muted transition-colors hover:bg-foreground/[0.05] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50">
-            <LogIn size={14} /><span className="hidden lg:inline">Sign in</span>
-          </Link>
+          <HeaderAuth />
         </div>
       </div>
     </header>

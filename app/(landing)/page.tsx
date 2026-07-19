@@ -1,6 +1,8 @@
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { AccountDeletedNotice } from "@/components/account-deleted-notice";
 import { Brand } from "@/components/brand";
+import { HeaderAuth } from "@/components/header-auth";
 import { AnimatedNumber } from "@/components/motion/animated-number";
 import { Reveal } from "@/components/motion/reveal";
 import { ProjectCard } from "@/components/projects/project-card";
@@ -21,7 +23,12 @@ function HeroStat({ value, label }: { value: number; label: string }) {
   );
 }
 
-export default async function LandingPage() {
+type LandingPageProps = {
+  searchParams: Promise<{ account?: string }>;
+};
+
+export default async function LandingPage({ searchParams }: LandingPageProps) {
+  const { account } = await searchParams;
   const [featuredProjects, hackathons] = await Promise.all([
     getFeaturedProjects(),
     getHackathons(),
@@ -30,6 +37,7 @@ export default async function LandingPage() {
 
   return (
     <main>
+      {account === "deleted" ? <AccountDeletedNotice /> : null}
       <section className="relative border-b border-border">
         <div
           aria-hidden="true"
@@ -43,9 +51,7 @@ export default async function LandingPage() {
               Explore hackathons
             </Link>
             <ThemeToggle />
-            <Link href="/login" className="border border-border bg-surface px-3.5 py-2 text-xs font-medium text-foreground transition-colors hover:border-foreground/40">
-              Sign in
-            </Link>
+            <HeaderAuth variant="landing" />
           </div>
         </nav>
 

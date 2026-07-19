@@ -7,5 +7,5 @@ type LoginPageProps = {
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const { error, next } = await searchParams;
 
-  return <AuthForm mode="login" callbackError={error} nextPath={next} />;
+  return <AuthForm callbackError={error} nextPath={next} />;
 }

@@ -13,7 +13,7 @@ export function getSupabaseAdmin() {
 
   if (!url || !secret) {
     throw new Error(
-      "Supabase Storage requires SUPABASE_URL and SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY)",
+      "Server-side Supabase administration requires SUPABASE_URL and SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY)",
     );
   }
 

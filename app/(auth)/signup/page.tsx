@@ -1,4 +1,4 @@
-import { AuthForm } from "../auth-form";
+import { permanentRedirect } from "next/navigation";
 
 type SignUpPageProps = {
   searchParams: Promise<{ error?: string; next?: string }>;
@@ -6,6 +6,17 @@ type SignUpPageProps = {
 
 export default async function SignUpPage({ searchParams }: SignUpPageProps) {
   const { error, next } = await searchParams;
+  const loginParams = new URLSearchParams();
 
-  return <AuthForm mode="signup" callbackError={error} nextPath={next} />;
+  if (error) {
+    loginParams.set("error", error);
+  }
+
+  if (next) {
+    loginParams.set("next", next);
+  }
+
+  permanentRedirect(
+    `/login${loginParams.size ? `?${loginParams.toString()}` : ""}`,
+  );
 }

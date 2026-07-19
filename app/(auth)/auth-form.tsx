@@ -1,21 +1,20 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 
 import { Reveal } from "@/components/motion/reveal";
 import { createClient } from "@/lib/supabase/client";
 
-type AuthMode = "login" | "signup";
 type Provider = "google" | "github";
 
 type AuthFormProps = {
   callbackError?: string;
-  mode: AuthMode;
   nextPath?: string;
 };
 
 const callbackErrorMessages: Record<string, string> = {
+  account_delete_failed:
+    "We couldn't delete your account. Sign in and try again.",
   configuration:
     "Authentication is not configured. Please contact the HackStack team.",
   oauth: "We couldn't complete your sign-in. Please try again.",
@@ -62,20 +61,14 @@ function safeNextPath(nextPath?: string) {
     : "/hackathons";
 }
 
-export function AuthForm({ callbackError, mode, nextPath }: AuthFormProps) {
+export function AuthForm({ callbackError, nextPath }: AuthFormProps) {
   const [loadingProvider, setLoadingProvider] = useState<Provider | null>(
     null,
   );
   const [error, setError] = useState<string | null>(
     callbackError ? callbackErrorMessages[callbackError] : null,
   );
-  const isLogin = mode === "login";
   const destination = safeNextPath(nextPath);
-  const alternateAuthPath = isLogin ? "/signup" : "/login";
-  const alternateAuthHref =
-    destination === "/hackathons"
-      ? alternateAuthPath
-      : `${alternateAuthPath}?next=${encodeURIComponent(destination)}`;
 
   async function continueWith(provider: Provider) {
     setError(null);
@@ -129,22 +122,21 @@ export function AuthForm({ callbackError, mode, nextPath }: AuthFormProps) {
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-6 py-12 text-foreground">
       <Reveal className="w-full max-w-sm">
-        <section aria-labelledby={`${mode}-heading`}>
+        <section aria-labelledby="auth-heading">
           <div className="mb-8 text-center">
             <p className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-accent-text">
               <span aria-hidden="true" className="size-2 bg-accent" />
               HackStack
             </p>
             <h1
-              id={`${mode}-heading`}
+              id="auth-heading"
               className="mt-4 text-3xl font-semibold tracking-[-0.03em]"
             >
-              {isLogin ? "Welcome back" : "Create your account"}
+              Continue to HackStack
             </h1>
             <p className="mt-3 text-sm leading-6 text-muted">
-              {isLogin
-                ? "Sign in to continue reviewing hackathon projects with clear evidence."
-                : "Start reviewing hackathon projects with evidence that is easy to inspect."}
+              Sign in or create an account to review hackathon projects with
+              clear evidence.
             </p>
           </div>
 
@@ -180,16 +172,6 @@ export function AuthForm({ callbackError, mode, nextPath }: AuthFormProps) {
               </p>
             ) : null}
           </div>
-
-          <p className="mt-6 text-center text-sm text-muted">
-            {isLogin ? "New to HackStack?" : "Already have an account?"}{" "}
-            <Link
-              href={alternateAuthHref}
-              className="font-medium text-accent-text underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:outline-none"
-            >
-              {isLogin ? "Create an account" : "Log in"}
-            </Link>
-          </p>
         </section>
       </Reveal>
     </main>
