@@ -16,12 +16,11 @@ test("derives coverage independently from the import job outcome", () => {
   assert.equal(getIndexCoverage(20, null), "unknown");
 });
 
-test("treats attempted failures as complete once every project was processed", () => {
-  assert.equal(getIsProcessingComplete("succeeded", 400, 400), true);
-  assert.equal(getIsProcessingComplete("partial", 400, 400), true);
-  assert.equal(getIsProcessingComplete("partial", 399, 400), false);
-  assert.equal(getIsProcessingComplete("failed", 400, 400), false);
-  assert.equal(getIsProcessingComplete("running", 400, 400), false);
+test("treats a run as complete once it reaches the end, regardless of project counts", () => {
+  assert.equal(getIsProcessingComplete("succeeded"), true);
+  assert.equal(getIsProcessingComplete("partial"), true);
+  assert.equal(getIsProcessingComplete("failed"), false);
+  assert.equal(getIsProcessingComplete("running"), false);
 });
 
 test("only treats complete coverage after a successful import as fully indexed", () => {

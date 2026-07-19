@@ -21,7 +21,7 @@ const stageDetails: Record<IndexingStage, { label: string; unit: string; descrip
   ingesting_repositories: {
     label: "Ingesting GitHub repositories",
     unit: "repositories",
-    description: "Indexing repository files, commits, dependencies, and language data.",
+    description: "Analyzing repository files, commits, dependencies, and language data.",
   },
   calculating_hacker_insights: {
     label: "Calculating Hacker Insights",

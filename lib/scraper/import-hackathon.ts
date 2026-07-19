@@ -375,7 +375,7 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
     });
     let detailFailures = 0;
     let completed = 0;
-    const scraped = await mapConcurrent(projectsToProcess, concurrency, async (card) => {
+    const persistedProjects = await mapConcurrent(projectsToProcess, concurrency, async (card) => {
       let detailFailed = false;
       let imageFailed = false;
       let project: ScrapedProject;
@@ -401,6 +401,20 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
           imageFailed = true;
         }
       }
+      const scrapeResult = {
+        project,
+        detailFailed,
+        imageFailed,
+        coverImagePath: storedCover?.path ?? null,
+        coverImageFetchedAt: storedCover?.fetchedAt ?? null,
+      };
+      const [storedProject] = await upsertProjects(hackathon.id, [scrapeResult]);
+      if (!storedProject) {
+        throw new Error(`Scraped project ${card.name} could not be persisted`);
+      }
+
+      // Publish progress only after the row is queryable so each router refresh
+      // can render the project that caused the counter to advance.
       completed += 1;
       const progressUpdatedAt = new Date().toISOString();
       await publishHackathonProgress({
@@ -416,19 +430,9 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
         detailFailed,
         imageFailed,
       });
-      return {
-        project,
-        detailFailed,
-        imageFailed,
-        coverImagePath: storedCover?.path ?? null,
-        coverImageFetchedAt: storedCover?.fetchedAt ?? null,
-      };
+      return storedProject;
     });
 
-    // Persist every scraped project — including detail failures — so nothing is
-    // dropped. A transient cover-image failure keeps the project with a null
-    // cover rather than discarding it.
-    const persistedProjects = await upsertProjects(hackathon.id, scraped);
     const githubProjects = persistedProjects.filter(
       (project): project is typeof project & { githubUrl: string } => Boolean(project.githubUrl),
     );
@@ -441,6 +445,32 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
     let completedGithubProjects = 0;
     const githubResults = await ingestProjectGithubRepositories(githubProjects, {
       async onProjectComplete(result) {
+        const finalizedAt = new Date().toISOString();
+        if (result.status === "failed") {
+          await db
+            .update(projects)
+            .set({
+              ingestionStatus: "failed",
+              ingestionError: (result.error ?? "GitHub ingestion failed").slice(0, ERROR_DETAIL_LIMIT),
+              updatedAt: finalizedAt,
+            })
+            .where(eq(projects.id, result.projectId));
+        } else {
+          await db
+            .update(projects)
+            .set({
+              ingestionStatus: result.status,
+              ingestionError: result.status === "partial"
+                ? result.warnings.join("\n").slice(0, ERROR_DETAIL_LIMIT) || null
+                : null,
+              ingestionCompletedAt: finalizedAt,
+              updatedAt: finalizedAt,
+            })
+            .where(eq(projects.id, result.projectId));
+        }
+
+        // As with scraping, advance the counter only after the completed
+        // repository is visible to project and insight queries.
         completedGithubProjects += 1;
         const progressUpdatedAt = new Date().toISOString();
         await publishHackathonProgress({
@@ -458,34 +488,6 @@ export async function importHackathon(inputUrl: string, options: ImportOptions =
         });
       },
     });
-    // Finalize each GitHub-linked project in place. Failures keep the row with a
-    // null completion timestamp (so the next import retries it) and record the
-    // reason for manual review; partial/succeeded runs mark the row complete.
-    for (const result of githubResults) {
-      const finalizedAt = new Date().toISOString();
-      if (result.status === "failed") {
-        await db
-          .update(projects)
-          .set({
-            ingestionStatus: "failed",
-            ingestionError: (result.error ?? "GitHub ingestion failed").slice(0, ERROR_DETAIL_LIMIT),
-            updatedAt: finalizedAt,
-          })
-          .where(eq(projects.id, result.projectId));
-      } else {
-        await db
-          .update(projects)
-          .set({
-            ingestionStatus: result.status,
-            ingestionError: result.status === "partial"
-              ? result.warnings.join("\n").slice(0, ERROR_DETAIL_LIMIT) || null
-              : null,
-            ingestionCompletedAt: finalizedAt,
-            updatedAt: finalizedAt,
-          })
-          .where(eq(projects.id, result.projectId));
-      }
-    }
     const githubFailures = githubResults.filter((result) => result.status === "failed").length;
     const githubPartials = githubResults.filter((result) => result.status === "partial").length;
     const sourceSnapshotAt = new Date().toISOString();

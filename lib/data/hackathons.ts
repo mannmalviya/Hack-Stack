@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, count, desc, eq, isNotNull } from "drizzle-orm";
+import { and, asc, count, desc, eq, isNotNull, ne } from "drizzle-orm";
 
 import { db } from "@/db";
 import { hackathons, projects } from "@/db/schema";
@@ -131,11 +131,7 @@ function mapHackathon(row: HackathonRow): HackathonListItem {
       row.indexedProjectCount,
       row.availableProjectCount,
     ),
-    isProcessingComplete: getIsProcessingComplete(
-      row.indexingStatus,
-      row.processedProjectCount,
-      row.availableProjectCount,
-    ),
+    isProcessingComplete: getIsProcessingComplete(row.indexingStatus),
     eventStatus: getEventStatus(row.startsAt, row.endsAt),
   };
 }
@@ -183,7 +179,7 @@ export async function getProjectsByHackathon(slug: string): Promise<ProjectListI
     .innerJoin(hackathons, eq(projects.hackathonId, hackathons.id))
     .where(and(
       eq(hackathons.devpostSlug, slug),
-      isNotNull(projects.ingestionCompletedAt),
+      ne(projects.ingestionStatus, "failed"),
     ))
     .orderBy(desc(projects.isWinner), asc(projects.name));
 

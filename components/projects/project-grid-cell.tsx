@@ -14,7 +14,7 @@ export function ProjectGridCell({ children, delay = 0 }: { children: React.React
   const [revealed, setRevealed] = useState(false);
 
   return (
-    <div className="relative h-full">
+    <div className="relative h-full border border-border">
       {!reduce && !revealed && (
         <div aria-hidden="true" className="absolute inset-0 bg-surface">
           <div className="aspect-[16/9] animate-pulse border-b border-border bg-foreground/[0.05]" />

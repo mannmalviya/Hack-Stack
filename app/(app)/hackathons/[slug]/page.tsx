@@ -101,17 +101,6 @@ export default async function HackathonPage({ params, searchParams }: PageProps)
 
       <nav aria-label="Hackathon views" className="flex border-b border-border font-mono text-xs uppercase tracking-[0.14em]">
         <Link
-          href={`/hackathons/${slug}`}
-          aria-current={activeView === "insights" ? "page" : undefined}
-          className={`border-b-2 px-4 py-3 font-medium transition-colors ${
-            activeView === "insights"
-              ? "border-accent text-foreground"
-              : "border-transparent text-muted hover:text-foreground"
-          }`}
-        >
-          Hackathon Insights
-        </Link>
-        <Link
           href={`/hackathons/${slug}?view=projects`}
           aria-current={showProjects ? "page" : undefined}
           className={`border-b-2 px-4 py-3 font-medium transition-colors ${
@@ -123,6 +112,17 @@ export default async function HackathonPage({ params, searchParams }: PageProps)
           Projects
         </Link>
         <Link
+          href={`/hackathons/${slug}`}
+          aria-current={activeView === "insights" ? "page" : undefined}
+          className={`border-b-2 px-4 py-3 font-medium transition-colors ${
+            activeView === "insights"
+              ? "border-accent text-foreground"
+              : "border-transparent text-muted hover:text-foreground"
+          }`}
+        >
+          Hackathon Insights
+        </Link>
+        <Link
           href={`/hackathons/${slug}?view=hackers`}
           aria-current={showHackerInsights ? "page" : undefined}
           className={`border-b-2 px-4 py-3 font-medium transition-colors ${
@@ -131,7 +131,7 @@ export default async function HackathonPage({ params, searchParams }: PageProps)
               : "border-transparent text-muted hover:text-foreground"
           }`}
         >
-          Hackers Insights
+          Hacker Insights
         </Link>
       </nav>
 

@@ -26,15 +26,14 @@ export function getIsFullyIndexed(
     && getIndexCoverage(indexedProjectCount, availableProjectCount) === "complete";
 }
 
-/** A project counts as processed even when scraping or GitHub ingestion failed. */
-export function getIsProcessingComplete(
-  indexingStatus: string,
-  processedProjectCount: number,
-  availableProjectCount: number | null,
-) {
-  const runReachedTheEnd = indexingStatus === "succeeded" || indexingStatus === "partial";
-  return runReachedTheEnd
-    && (availableProjectCount === null || processedProjectCount >= availableProjectCount);
+/**
+ * A run is "complete" once it has finished its pass over every project it discovered.
+ * This intentionally ignores availableProjectCount: Devpost's self-reported gallery
+ * total (scraped once, upfront) can overcount vs. the cards actually walked, which
+ * would otherwise leave a fully-processed hackathon stuck showing as incomplete.
+ */
+export function getIsProcessingComplete(indexingStatus: string) {
+  return indexingStatus === "succeeded" || indexingStatus === "partial";
 }
 
 export function getIsProjectIndexed(

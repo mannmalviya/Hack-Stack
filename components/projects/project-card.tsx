@@ -1,4 +1,4 @@
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Trophy } from "lucide-react";
 import Link from "next/link";
 import { ProjectCoverImage } from "@/components/projects/project-cover-image";
 import type { ProjectListItem } from "@/lib/data/hackathons";
@@ -21,6 +21,21 @@ export function ProjectCard({
       className="group flex h-full flex-col overflow-hidden bg-surface transition-colors duration-200 hover:bg-foreground/[0.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
     >
       <div className="relative aspect-[16/9] overflow-hidden border-b border-border">
+        {project.isWinner && (
+          <div
+            className="absolute top-3 left-3 z-10 flex max-w-[calc(100%-1.5rem)] items-center gap-1.5 border border-accent/50 bg-background/95 px-2.5 py-1.5 font-mono text-[10px] font-medium uppercase tracking-[0.08em] text-foreground shadow-sm backdrop-blur-sm"
+            title={project.winningTrack ?? "Winner"}
+          >
+            <Trophy size={12} className="shrink-0 text-accent-text" aria-hidden="true" />
+            <span className="shrink-0">Winner</span>
+            {project.winningTrack && (
+              <>
+                <span className="text-muted" aria-hidden="true">·</span>
+                <span className="truncate text-muted">{project.winningTrack}</span>
+              </>
+            )}
+          </div>
+        )}
         {project.coverImageUrl ? (
           <ProjectCoverImage src={project.coverImageUrl} alt={`${project.name} project cover`} />
         ) : (
