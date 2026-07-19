@@ -82,24 +82,28 @@ export function HackathonIndexingBanner({ hackathon }: { hackathon: HackathonLis
     >
       <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 items-start gap-3">
-          {hackathon.indexingStage === "ingesting_repositories" ? (
-            <Image
-              src="/images/github-mona-loading.gif"
-              alt=""
-              width={40}
-              height={40}
-              unoptimized
-              className="mt-0.5 size-10 shrink-0 object-contain [image-rendering:pixelated]"
-            />
-          ) : (
+          {hackathon.indexingStage !== "ingesting_repositories" && (
             <LoaderCircle className="mt-0.5 shrink-0 animate-spin text-accent-text" size={20} aria-hidden="true" />
           )}
           <div>
             <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-accent-text">
               Hackathon indexing in progress
             </p>
-            <h2 id="indexing-progress-title" className="mt-1 text-lg font-semibold tracking-[-0.025em]">
-              {stage.label}
+            <h2
+              id="indexing-progress-title"
+              className="mt-1 flex items-center gap-3 text-lg font-semibold tracking-[-0.025em]"
+            >
+              <span>{stage.label}</span>
+              {hackathon.indexingStage === "ingesting_repositories" && (
+                <Image
+                  src="/images/github-mona-loading.gif"
+                  alt=""
+                  width={40}
+                  height={40}
+                  unoptimized
+                  className="size-10 shrink-0 object-contain [image-rendering:pixelated]"
+                />
+              )}
             </h2>
             <p className="mt-1 max-w-2xl text-xs leading-5 text-muted">{stage.description}</p>
           </div>
