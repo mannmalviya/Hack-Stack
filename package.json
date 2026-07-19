@@ -10,7 +10,7 @@
     "postinstall": "patch-package",
     "lint": "eslint",
     "db:check": "drizzle-kit check",
-    "db:generate": "drizzle-kit generate",
+    "db:generate": "drizzle-kit generate --prefix=supabase",
     "db:studio": "drizzle-kit studio",
     "trigger:dev": "trigger dev start",
     "scrape:hackathon": "tsx scripts/scrape-hackathon.ts",
