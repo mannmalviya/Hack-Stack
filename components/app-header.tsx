@@ -7,7 +7,9 @@ import { ThemeToggle } from "@/components/theme-toggle";
 export function AppHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-md transition-colors duration-200">
-      <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:px-6 lg:px-8">
+      {/* Full-bleed on every page so the header reads identically whether the
+          page below is a centered container or a full-width workspace. */}
+      <div className="flex h-14 items-center gap-6 px-5">
         <div className="w-auto sm:w-44"><Brand /></div>
         <div className="min-w-0 flex-1 sm:mx-auto sm:max-w-xs"><CommandMenu /></div>
         <div className="flex shrink-0 items-center justify-end gap-2 sm:w-auto">
