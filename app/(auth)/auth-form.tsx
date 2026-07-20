@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { HackStackLogo } from "@/components/hackstack-logo";
 import { Reveal } from "@/components/motion/reveal";
 import { createClient } from "@/lib/supabase/client";
 
@@ -125,7 +126,7 @@ export function AuthForm({ callbackError, nextPath }: AuthFormProps) {
         <section aria-labelledby="auth-heading">
           <div className="mb-8 text-center">
             <p className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-accent-text">
-              <span aria-hidden="true" className="size-2 bg-accent" />
+              <HackStackLogo className="size-4 shrink-0 text-foreground" />
               HackStack
             </p>
             <h1

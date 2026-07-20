@@ -10,6 +10,7 @@ export type ProjectDetail = {
   slug: string;
   name: string;
   tagline: string | null;
+  description: string | null;
   devpostUrl: string;
   coverImageUrl: string | null;
   githubUrl: string | null;
@@ -34,6 +35,7 @@ export async function getProjectBySlug(
       slug: projects.devpostSlug,
       name: projects.name,
       tagline: projects.tagline,
+      description: projects.description,
       devpostUrl: projects.devpostUrl,
       coverImagePath: projects.coverImagePath,
       githubUrl: projects.githubUrl,
