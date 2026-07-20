@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, ArrowLeft, ArrowRight, ExternalLink, Search } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowRight, ExternalLink, Search, Trophy } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -24,6 +24,8 @@ type ContributorAggregate = Omit<
   projectName: string;
   projectSlug: string | null;
   projectNames: string[];
+  /** A contributor may have won on more than one team. */
+  winningTracks: string[];
 };
 
 const PAGE_SIZE = 25;
@@ -180,6 +182,17 @@ function LeaderboardAvatar({
   );
 }
 
+/** Green trophy only; the track itself lives in the tooltip. */
+function WinnerTrophy({ track, className }: { track: string | null; className?: string }) {
+  const label = track ? `Winner — ${track}` : "Winner";
+  return (
+    <span title={label} className={`inline-flex shrink-0 ${className ?? ""}`}>
+      <Trophy size={12} className="text-accent" aria-hidden="true" />
+      <span className="sr-only">{label}</span>
+    </span>
+  );
+}
+
 function VerticalGraphEntry({
   href,
   externalLink = false,
@@ -187,6 +200,8 @@ function VerticalGraphEntry({
   imageUrl,
   imageExternal = false,
   roundImage = false,
+  isWinner = false,
+  winningTrack = null,
   value,
   metric,
   metricLabel,
@@ -198,12 +213,14 @@ function VerticalGraphEntry({
   imageUrl: string | null;
   imageExternal?: boolean;
   roundImage?: boolean;
+  isWinner?: boolean;
+  winningTrack?: string | null;
   value: number;
   metric: Metric;
   metricLabel: string;
   graphMax: number;
 }) {
-  const label = `${name}, ${formatMetric(value, metric)} ${metricLabel.toLowerCase()}`;
+  const label = `${name}${isWinner ? " (winner)" : ""}, ${formatMetric(value, metric)} ${metricLabel.toLowerCase()}`;
   const content = (
     <>
       <span className="relative z-10 flex h-64 items-end" aria-hidden="true">
@@ -227,6 +244,7 @@ function VerticalGraphEntry({
           round={roundImage}
           external={imageExternal}
         />
+        {isWinner ? <WinnerTrophy track={winningTrack} className="mt-1.5" /> : null}
         <span
           className="mt-2 max-h-24 overflow-hidden text-[10px] leading-3 text-muted group-hover:text-accent-text"
           style={{ writingMode: "vertical-rl" }}
@@ -298,8 +316,13 @@ export function HackerInsights({
         grouped.set(row.githubUserId, {
           ...row,
           projectNames: [row.projectName],
+          winningTracks: row.isWinner && row.winningTrack ? [row.winningTrack] : [],
         });
         continue;
+      }
+      current.isWinner = current.isWinner || row.isWinner;
+      if (row.isWinner && row.winningTrack && !current.winningTracks.includes(row.winningTrack)) {
+        current.winningTracks.push(row.winningTrack);
       }
       current.creditedCommitCount += row.creditedCommitCount;
       current.creditedAdditions += row.creditedAdditions;
@@ -503,6 +526,8 @@ export function HackerInsights({
                               href={`/hackathons/${hackathonSlug}/${team.projectSlug}`}
                               name={team.projectName}
                               imageUrl={team.coverImageUrl}
+                              isWinner={team.isWinner}
+                              winningTrack={team.winningTrack}
                               value={metricValue(team, "teams", metric)}
                               metric={metric}
                               metricLabel={activeMetricLabel}
@@ -520,6 +545,8 @@ export function HackerInsights({
                             imageUrl={`https://avatars.githubusercontent.com/u/${contributor.githubUserId}?v=4`}
                             imageExternal
                             roundImage
+                            isWinner={contributor.isWinner}
+                            winningTrack={contributor.winningTracks.join(" · ") || null}
                             value={metricValue(contributor, "contributors", metric)}
                             metric={metric}
                             metricLabel={activeMetricLabel}
@@ -569,6 +596,7 @@ export function HackerInsights({
                             fallback={team.projectName.slice(0, 2)}
                           />
                           <Link href={`/hackathons/${hackathonSlug}/${team.projectSlug}`} className="font-medium hover:text-accent-text hover:underline">{team.projectName}</Link>
+                          {team.isWinner ? <WinnerTrophy track={team.winningTrack} /> : null}
                         </div>
                       </td>
                       {metrics.map((option) => (
@@ -593,10 +621,15 @@ export function HackerInsights({
                           external
                         />
                         <div>
-                          <a href={`https://github.com/${encodeURIComponent(contributor.githubLogin)}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 font-medium hover:text-accent-text hover:underline">
-                            {contributor.displayName}
-                            <ExternalLink size={11} aria-hidden="true" />
-                          </a>
+                          <span className="flex items-center gap-1.5">
+                            <a href={`https://github.com/${encodeURIComponent(contributor.githubLogin)}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 font-medium hover:text-accent-text hover:underline">
+                              {contributor.displayName}
+                              <ExternalLink size={11} aria-hidden="true" />
+                            </a>
+                            {contributor.isWinner ? (
+                              <WinnerTrophy track={contributor.winningTracks.join(" · ") || null} />
+                            ) : null}
+                          </span>
                           <p className="mt-0.5 font-mono text-[10px] text-muted">@{contributor.githubLogin}</p>
                         </div>
                       </div>

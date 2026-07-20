@@ -8,6 +8,7 @@ import {
 import { InsightSectionHeading } from "@/components/hackathons/insight-section-heading";
 import { TechnologyList } from "@/components/hackathons/technology-list";
 import { AgentLogo } from "@/components/icons/agent-logos";
+import { formatBytes } from "@/lib/format";
 import { AnimatedBar } from "@/components/motion/animated-bar";
 import { AnimatedNumber } from "@/components/motion/animated-number";
 import { Reveal } from "@/components/motion/reveal";
@@ -15,14 +16,6 @@ import type { HackathonInsights } from "@/lib/data/hackathon-insights";
 
 const CLAIMED_STRIPES =
   "repeating-linear-gradient(135deg, transparent, transparent 3px, var(--background) 3px, var(--background) 5px)";
-
-function formatBytes(bytes: number) {
-  if (bytes === 0) return "0 B";
-  const units = ["B", "KB", "MB", "GB"];
-  const unitIndex = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
-  const value = bytes / (1024 ** unitIndex);
-  return `${value >= 10 || unitIndex === 0 ? value.toFixed(0) : value.toFixed(1)} ${units[unitIndex]}`;
-}
 
 function CoverageCard({
   icon,

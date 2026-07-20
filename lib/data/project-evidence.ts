@@ -37,6 +37,12 @@ export type ProjectAgentSignal = {
   fromCommits: boolean;
 };
 
+export type ProjectCodebase = {
+  /** Recognized source only: non-binary files with a detected language. */
+  sizeBytes: number;
+  fileCount: number;
+};
+
 export type ProjectEvidence = {
   /**
    * False when no repository was indexed. Claims then have nothing to check
@@ -45,6 +51,7 @@ export type ProjectEvidence = {
   hasIndexedRepository: boolean;
   technologies: ProjectTechnology[];
   agents: ProjectAgentSignal[];
+  codebase: ProjectCodebase;
 };
 
 function asStringArray(value: unknown) {
@@ -79,13 +86,35 @@ export async function getProjectEvidence(
 
   const projectFilter = eq(projectRepositories.projectId, project.id);
 
-  const [repositories, languageRows, dependencyRows, agentFileRows, agentCommitRows] =
-    await Promise.all([
+  const [
+    repositories,
+    codebaseRows,
+    languageRows,
+    dependencyRows,
+    agentFileRows,
+    agentCommitRows,
+  ] = await Promise.all([
       db
         .select({ id: projectRepositories.id })
         .from(projectRepositories)
         .where(projectFilter)
         .limit(1),
+      // Same filter the hackathon-wide codebase sizes use, so the two agree.
+      db
+        .select({
+          sizeBytes: sql<number>`coalesce(sum(${repositoryFiles.sizeBytes}), 0)::double precision`,
+          fileCount: sql<number>`count(*)::int`,
+        })
+        .from(repositoryFiles)
+        .innerJoin(
+          projectRepositories,
+          eq(repositoryFiles.projectRepositoryId, projectRepositories.id),
+        )
+        .where(and(
+          projectFilter,
+          eq(repositoryFiles.isBinary, false),
+          isNotNull(repositoryFiles.language),
+        )),
       db
         .selectDistinct({ language: repositoryFiles.language })
         .from(repositoryFiles)
@@ -162,7 +191,7 @@ export async function getProjectEvidence(
             ilike(repositoryCommits.authorEmail, "%openai.com%"),
           ),
         )),
-    ]);
+  ]);
 
   const detected = new Map<string, ProjectTechnology>();
   for (const row of languageRows) {
@@ -196,6 +225,10 @@ export async function getProjectEvidence(
 
   return {
     hasIndexedRepository: repositories.length > 0,
+    codebase: {
+      sizeBytes: Number(codebaseRows[0]?.sizeBytes ?? 0),
+      fileCount: Number(codebaseRows[0]?.fileCount ?? 0),
+    },
     // Code-backed first: an unverified claim is the thing a judge needs to spot.
     technologies: [...technologies.values()].sort((left, right) =>
       (left.evidence === right.evidence ? 0 : left.evidence === "detected" ? -1 : 1)

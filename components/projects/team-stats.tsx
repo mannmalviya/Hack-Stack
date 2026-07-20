@@ -1,6 +1,8 @@
 "use client";
 
+import { ArrowUpRight } from "lucide-react";
 import { MotionConfig } from "motion/react";
+import Link from "next/link";
 import { useState } from "react";
 import { AnimatedBar } from "@/components/motion/animated-bar";
 import type { ProjectContributor, ProjectTeamStats } from "@/lib/data/project-team";
@@ -182,11 +184,25 @@ function ContributorBars({
   );
 }
 
+function CompareLink({ hackathonSlug }: { hackathonSlug: string }) {
+  return (
+    <Link
+      href={`/hackathons/${hackathonSlug}?view=hackers`}
+      className="inline-flex items-center gap-1.5 border border-border px-3 py-1.5 text-xs text-muted transition-colors hover:border-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+    >
+      Compare with all teams
+      <ArrowUpRight size={13} aria-hidden="true" />
+    </Link>
+  );
+}
+
 export function TeamStats({
   stats,
+  hackathonSlug,
   evidence,
 }: {
   stats: ProjectTeamStats;
+  hackathonSlug: string;
   /** Rendered beneath the stats in every state; it has its own data source. */
   evidence?: React.ReactNode;
 }) {
@@ -207,6 +223,7 @@ export function TeamStats({
           );
     return (
       <div className="space-y-6 p-5">
+        <CompareLink hackathonSlug={hackathonSlug} />
         {notice}
         {evidence}
       </div>
@@ -215,6 +232,8 @@ export function TeamStats({
 
   return (
     <div className="space-y-6 p-5">
+      <CompareLink hackathonSlug={hackathonSlug} />
+
       <div className="flex flex-wrap items-end gap-6">
         <SegmentedControl label="View" options={VIEWS} value={view} onChange={setView} />
         {view === "members" ? (

@@ -17,6 +17,8 @@ export type HackerTeamLeaderboardRow = {
   projectName: string;
   projectSlug: string;
   coverImageUrl: string | null;
+  isWinner: boolean;
+  winningTrack: string | null;
   commitCount: number;
   additions: number;
   deletions: number;
@@ -29,6 +31,8 @@ export type HackerContributorLeaderboardRow = {
   githubUserId: number;
   githubLogin: string;
   displayName: string;
+  isWinner: boolean;
+  winningTrack: string | null;
   creditedCommitCount: number;
   creditedAdditions: number;
   creditedDeletions: number;
@@ -91,6 +95,8 @@ export async function getHackerInsights(slug: string): Promise<HackerInsightsDat
         projectName: projects.name,
         projectSlug: projects.devpostSlug,
         coverImagePath: projects.coverImagePath,
+        isWinner: projects.isWinner,
+        winningTrack: projects.winningTrack,
         commitCount: hackerTeamMetrics.commitCount,
         additions: hackerTeamMetrics.additions,
         deletions: hackerTeamMetrics.deletions,
@@ -106,6 +112,8 @@ export async function getHackerInsights(slug: string): Promise<HackerInsightsDat
         githubUserId: hackerContributorMetrics.githubUserId,
         githubLogin: hackerContributorMetrics.githubLogin,
         displayName: hackerContributorMetrics.displayName,
+        isWinner: projects.isWinner,
+        winningTrack: projects.winningTrack,
         creditedCommitCount: hackerContributorMetrics.creditedCommitCount,
         creditedAdditions: hackerContributorMetrics.creditedAdditions,
         creditedDeletions: hackerContributorMetrics.creditedDeletions,

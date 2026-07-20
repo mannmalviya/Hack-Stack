@@ -1,6 +1,7 @@
 import { AgentLogo } from "@/components/icons/agent-logos";
 import { TechnologyIcon } from "@/components/icons/technology-icon";
 import type { ProjectEvidence } from "@/lib/data/project-evidence";
+import { formatBytes } from "@/lib/format";
 
 // Same hatch the hackathon insights use to mark a claim with no code behind it.
 const CLAIMED_STRIPES =
@@ -117,6 +118,40 @@ export function ProjectEvidenceList({ evidence }: { evidence: ProjectEvidence })
           Detected from committed agent config files and commit authorship. Absence of a
           signal is not proof an agent was unused.
         </p>
+      </section>
+
+      <section>
+        <SectionHeading>Codebase size</SectionHeading>
+        {evidence.hasIndexedRepository ? (
+          <>
+            <div className="grid gap-px border border-border bg-border sm:grid-cols-2">
+              <div className="bg-surface px-5 py-5">
+                <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted">
+                  Source size
+                </p>
+                <p className="mt-2 text-3xl font-semibold tabular-nums tracking-[-0.045em]">
+                  {formatBytes(evidence.codebase.sizeBytes)}
+                </p>
+              </div>
+              <div className="bg-surface px-5 py-5">
+                <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted">
+                  Source files
+                </p>
+                <p className="mt-2 text-3xl font-semibold tabular-nums tracking-[-0.045em]">
+                  {evidence.codebase.fileCount.toLocaleString()}
+                </p>
+              </div>
+            </div>
+            <p className="mt-3 text-[11px] leading-relaxed text-muted">
+              Counts recognized source files only; vendored directories, binaries and
+              lockfiles are excluded, so this is smaller than the repository on disk.
+            </p>
+          </>
+        ) : (
+          <p className="border border-dashed border-border px-4 py-8 text-center text-xs text-muted">
+            No repository was indexed, so there is no codebase to measure.
+          </p>
+        )}
       </section>
     </div>
   );

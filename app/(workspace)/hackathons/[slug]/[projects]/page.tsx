@@ -118,6 +118,7 @@ export default async function ProjectPage({ params }: PageProps) {
           team={
             <TeamStats
               stats={teamStats}
+              hackathonSlug={project.hackathonSlug}
               evidence={
                 evidence ? <ProjectEvidenceList evidence={evidence} /> : null
               }
