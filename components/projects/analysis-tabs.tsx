@@ -2,8 +2,10 @@ import { MessagesSquare } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { ArchitecturePanel } from "@/components/projects/architecture-panel";
+import { FeatureVerificationPanel } from "@/components/projects/feature-verification-panel";
 import { PaneTabs } from "@/components/projects/pane-tabs";
 import type { ProjectArchitecture } from "@/lib/architecture/project-architecture";
+import type { FeatureVerificationReport } from "@/lib/data/feature-verification";
 
 /*
  * TODO(ai-chat): Not implemented — owned by a teammate.
@@ -46,10 +48,12 @@ function AiChatPanel() {
 export function AnalysisTabs({
   architecture,
   hasGithubUrl,
+  featureVerification,
   team,
 }: {
   architecture: ProjectArchitecture | null;
   hasGithubUrl: boolean;
+  featureVerification: FeatureVerificationReport | null;
   /** Rendered by the page: the team stats own their own data source. */
   team: ReactNode;
 }) {
@@ -65,6 +69,11 @@ export function AnalysisTabs({
           content: (
             <ArchitecturePanel architecture={architecture} hasGithubUrl={hasGithubUrl} />
           ),
+        },
+        {
+          id: "features",
+          label: "Features",
+          content: <FeatureVerificationPanel report={featureVerification} />,
         },
         { id: "chat", label: "AI Chat", content: <AiChatPanel /> },
       ]}
