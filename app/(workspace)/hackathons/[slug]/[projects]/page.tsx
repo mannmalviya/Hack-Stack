@@ -1,6 +1,7 @@
 import { Search } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { AnalysisTabs } from "@/components/projects/analysis-tabs";
 import { BriefTabs } from "@/components/projects/brief-tabs";
 import { DevpostBrief } from "@/components/projects/devpost-brief";
 import { ProjectNav } from "@/components/projects/project-nav";
@@ -125,11 +126,7 @@ export default async function ProjectPage({ params }: PageProps) {
           }
         />
       }
-      right={
-        <div className="p-5">
-          <PanePlaceholder note="Right pane content to be designed." />
-        </div>
-      }
+      right={<AnalysisTabs />}
     />
   );
 }
