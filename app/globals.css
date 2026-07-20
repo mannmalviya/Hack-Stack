@@ -72,6 +72,17 @@ a {
   }
 }
 
+/* A categorical chart mark. Both modes' hues are set inline as --series and
+   --series-dark; this picks the right one, because the two are separately
+   chosen steps rather than one colour flipped for the dark surface. */
+.series-mark {
+  background-color: var(--series);
+}
+
+.dark .series-mark {
+  background-color: var(--series-dark);
+}
+
 /* Rendered GitHub readmes. Scoped so untrusted markdown cannot restyle the app,
    and driven by the same tokens as the rest of the UI. */
 .readme {

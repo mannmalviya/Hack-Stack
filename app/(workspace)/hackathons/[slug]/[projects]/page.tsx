@@ -10,6 +10,7 @@ import { ReadmeMarkdown } from "@/components/projects/readme-markdown";
 import { ProjectEvidenceList } from "@/components/projects/project-evidence-list";
 import { SourceLink } from "@/components/projects/source-link";
 import { TeamStats } from "@/components/projects/team-stats";
+import { getProjectArchitecture } from "@/lib/architecture/project-architecture";
 import { getProjectEvidence } from "@/lib/data/project-evidence";
 import { getProjectTeamStats } from "@/lib/data/project-team";
 import { getProjectBySlug, getProjectNeighbours } from "@/lib/data/projects";
@@ -58,11 +59,12 @@ export default async function ProjectPage({ params }: PageProps) {
   const project = await getProjectBySlug(slug, projects);
   if (!project) notFound();
 
-  const [readme, neighbours, teamStats, evidence] = await Promise.all([
+  const [readme, neighbours, teamStats, evidence, architecture] = await Promise.all([
     getGithubReadme(project.githubUrl),
     getProjectNeighbours(slug, projects),
     getProjectTeamStats(slug, projects),
     getProjectEvidence(slug, projects),
+    getProjectArchitecture(slug, projects),
   ]);
   const repoUrl = githubRepoUrl(project.githubUrl);
 
@@ -116,6 +118,12 @@ export default async function ProjectPage({ params }: PageProps) {
               </div>
             )
           }
+        />
+      }
+      right={
+        <AnalysisTabs
+          architecture={architecture}
+          hasGithubUrl={Boolean(project.githubUrl)}
           team={
             <TeamStats
               stats={teamStats}
@@ -127,7 +135,6 @@ export default async function ProjectPage({ params }: PageProps) {
           }
         />
       }
-      right={<AnalysisTabs />}
     />
   );
 }
