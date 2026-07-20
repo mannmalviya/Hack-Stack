@@ -10,10 +10,12 @@ const LABELS = {
 type SourceLinkProps = {
   source: keyof typeof ICONS;
   href: string;
+  size?: number;
+  className?: string;
 };
 
 /** Icon link out to wherever a panel's content was sourced from. */
-export function SourceLink({ source, href }: SourceLinkProps) {
+export function SourceLink({ source, href, size = 22, className }: SourceLinkProps) {
   const Icon = ICONS[source];
   const label = LABELS[source];
 
@@ -24,9 +26,9 @@ export function SourceLink({ source, href }: SourceLinkProps) {
       rel="noreferrer"
       aria-label={label}
       title={label}
-      className="inline-flex shrink-0 text-muted transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+      className={`inline-flex shrink-0 text-muted transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 ${className ?? ""}`}
     >
-      <Icon size={22} />
+      <Icon size={size} />
     </a>
   );
 }

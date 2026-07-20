@@ -1,4 +1,4 @@
-import { ChevronRight, ExternalLink, FolderKanban } from "lucide-react";
+import { ChevronRight, Clapperboard, ExternalLink, FolderKanban } from "lucide-react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -142,7 +142,18 @@ export default async function HackathonPage({ params, searchParams }: PageProps)
               <h2 id="projects-heading" className="text-xl font-semibold tracking-[-0.03em] sm:text-2xl">Submitted projects</h2>
               <p className="mt-2 text-xs text-muted">Browse the submission metadata currently indexed from Devpost.</p>
             </div>
-            <p className="hidden font-mono text-[10px] uppercase tracking-[0.14em] text-muted sm:block">Imported from Devpost</p>
+            <div className="flex shrink-0 items-center gap-3">
+              <p className="hidden font-mono text-[10px] uppercase tracking-[0.14em] text-muted lg:block">Imported from Devpost</p>
+              {projects.some((project) => project.videoUrl) ? (
+                <Link
+                  href={`/hackathons/${slug}/reels`}
+                  className="inline-flex h-11 items-center gap-2.5 bg-accent px-5 text-sm font-semibold text-white shadow-lg transition-opacity hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+                >
+                  <Clapperboard size={17} aria-hidden="true" />
+                  Watch demos
+                </Link>
+              ) : null}
+            </div>
           </div>
           <ProjectGrid projects={projects} hackathonSlug={slug} />
         </section>

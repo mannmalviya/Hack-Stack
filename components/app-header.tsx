@@ -1,4 +1,4 @@
-import { Trophy } from "lucide-react";
+import { Globe, Trophy } from "lucide-react";
 import Link from "next/link";
 import { Brand } from "@/components/brand";
 import { CommandMenu } from "@/components/command-menu";
@@ -14,6 +14,13 @@ export function AppHeader() {
         <div className="w-auto sm:w-44"><Brand /></div>
         <div className="min-w-0 flex-1 sm:mx-auto sm:max-w-xs"><CommandMenu /></div>
         <div className="flex shrink-0 items-center justify-end gap-2 sm:w-auto">
+          <Link
+            href="/discover"
+            className="hidden h-8 items-center gap-1.5 border border-border bg-surface px-3 text-xs font-medium text-foreground transition-colors hover:border-foreground/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 md:flex"
+          >
+            <Globe size={13} aria-hidden="true" />
+            Discover
+          </Link>
           <Link
             href="/hackathons"
             className="hidden h-8 items-center gap-1.5 border border-border bg-surface px-3 text-xs font-medium text-foreground transition-colors hover:border-foreground/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 md:flex"
