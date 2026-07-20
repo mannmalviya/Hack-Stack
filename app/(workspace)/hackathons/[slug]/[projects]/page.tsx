@@ -1,11 +1,13 @@
-import { SiGithub } from "@icons-pack/react-simple-icons";
+import { Search } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { BriefTabs } from "@/components/projects/brief-tabs";
 import { DevpostBrief } from "@/components/projects/devpost-brief";
+import { ProjectNav } from "@/components/projects/project-nav";
 import { ProjectWorkspace } from "@/components/projects/project-workspace";
 import { ReadmeMarkdown } from "@/components/projects/readme-markdown";
-import { getProjectBySlug } from "@/lib/data/projects";
+import { SourceLink } from "@/components/projects/source-link";
+import { getProjectBySlug, getProjectNeighbours } from "@/lib/data/projects";
 import { getGithubReadme } from "@/lib/github/readme-cache";
 import { parseGithubRepositoryUrl } from "@/lib/github/urls";
 
@@ -51,39 +53,44 @@ export default async function ProjectPage({ params }: PageProps) {
   const project = await getProjectBySlug(slug, projects);
   if (!project) notFound();
 
-  const readme = await getGithubReadme(project.githubUrl);
+  const [readme, neighbours] = await Promise.all([
+    getGithubReadme(project.githubUrl),
+    getProjectNeighbours(slug, projects),
+  ]);
   const repoUrl = githubRepoUrl(project.githubUrl);
 
   return (
     <ProjectWorkspace
-      leftLabel="Hacker Brief"
+      leftLabel="Project Info"
       rightLabel="Analysis"
+      rightIcon={<Search size={16} aria-hidden="true" />}
+      dividerControls={
+        <ProjectNav
+          hackathonSlug={project.hackathonSlug}
+          previous={neighbours.previous}
+          next={neighbours.next}
+        />
+      }
       left={
         <BriefTabs
-          actions={{
-            readme: repoUrl ? (
-              <a
-                href={repoUrl}
-                target="_blank"
-                rel="noreferrer"
-                aria-label="Open repository on GitHub"
-                title="Open repository on GitHub"
-                className="inline-flex text-muted transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
-              >
-                <SiGithub size={15} />
-              </a>
-            ) : null,
-          }}
           devpost={
             <DevpostBrief
               name={project.name}
               videoUrl={project.videoUrl}
+              devpostUrl={project.devpostUrl}
               description={project.description}
+              isWinner={project.isWinner}
+              winningTrack={project.winningTrack}
             />
           }
           readme={
             readme ? (
-              <div className="p-5">
+              <div className="space-y-5 p-5">
+                {repoUrl ? (
+                  <div className="flex justify-end">
+                    <SourceLink source="github" href={repoUrl} />
+                  </div>
+                ) : null}
                 <ReadmeMarkdown
                   content={readme.content}
                   repoFullName={readme.repoFullName}

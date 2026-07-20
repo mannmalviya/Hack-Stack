@@ -2,8 +2,10 @@
 
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useEffect, useRef } from "react";
 import { useSyncExternalStore } from "react";
 import { flushSync } from "react-dom";
+import { hasModifier, isEditableTarget } from "@/lib/keyboard";
 
 const subscribe = () => () => undefined;
 
@@ -59,13 +61,35 @@ export function ThemeToggle() {
     }).catch(() => applyTheme(nextTheme));
   }
 
+  // Held in a ref so the listener is bound once instead of re-registering on
+  // every theme change.
+  const toggleRef = useRef(toggleTheme);
+  useEffect(() => {
+    toggleRef.current = toggleTheme;
+  });
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.defaultPrevented || hasModifier(event)) return;
+      if (event.key !== "d" && event.key !== "D") return;
+      if (isEditableTarget(event.target)) return;
+
+      event.preventDefault();
+      toggleRef.current();
+    }
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, []);
+
   return (
     <button
       type="button"
       onClick={toggleTheme}
       disabled={!mounted}
       className="grid size-8 place-items-center border border-border bg-surface text-foreground transition-colors hover:bg-foreground/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
-      aria-label={mounted ? `Switch to ${resolvedTheme === "dark" ? "light" : "dark"} theme` : "Toggle theme"}
+      title="Toggle theme (D)"
+      aria-label={mounted ? `Switch to ${resolvedTheme === "dark" ? "light" : "dark"} theme (D)` : "Toggle theme"}
     >
       {mounted && resolvedTheme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
     </button>

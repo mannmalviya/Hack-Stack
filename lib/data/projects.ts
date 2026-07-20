@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq } from "drizzle-orm";
+import { and, asc, desc, eq, ne } from "drizzle-orm";
 
 import { db } from "@/db";
 import { hackathons, projects } from "@/db/schema";
@@ -60,4 +60,45 @@ export async function getProjectBySlug(
 
   const { coverImagePath, ...project } = row;
   return { ...project, coverImageUrl: getProjectCoverPublicUrl(coverImagePath) };
+}
+
+export type ProjectNeighbour = { slug: string; name: string };
+
+export type ProjectNeighbours = {
+  previous: ProjectNeighbour | null;
+  next: ProjectNeighbour | null;
+};
+
+/**
+ * Adjacent projects for in-page navigation.
+ *
+ * The filter and ordering deliberately mirror `getProjectsByHackathon`, so
+ * stepping through projects here walks the gallery in the order a judge sees
+ * it, and never lands on a project the gallery hides.
+ */
+export async function getProjectNeighbours(
+  hackathonSlug: string,
+  projectSlug: string,
+): Promise<ProjectNeighbours> {
+  const rows = await db
+    .select({ slug: projects.devpostSlug, name: projects.name })
+    .from(projects)
+    .innerJoin(hackathons, eq(projects.hackathonId, hackathons.id))
+    .where(
+      and(
+        eq(hackathons.devpostSlug, hackathonSlug),
+        ne(projects.ingestionStatus, "failed"),
+      ),
+    )
+    .orderBy(desc(projects.isWinner), asc(projects.name));
+
+  const index = rows.findIndex((row) => row.slug === projectSlug);
+  if (index === -1) return { previous: null, next: null };
+
+  // Ends stay null rather than wrapping, so the arrows can show where the list
+  // stops instead of silently looping.
+  return {
+    previous: rows[index - 1] ?? null,
+    next: rows[index + 1] ?? null,
+  };
 }

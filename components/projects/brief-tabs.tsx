@@ -12,20 +12,21 @@ const TABS: Array<{ id: BriefTab; label: string }> = [
 export type BriefTabsProps = {
   devpost: ReactNode;
   readme: ReactNode;
-  /** Trailing control shown in the tab strip, per tab. */
-  actions?: Partial<Record<BriefTab, ReactNode>>;
 };
 
 /** Both panels stay mounted so switching tabs never re-fetches or re-renders. */
-export function BriefTabs({ devpost, readme, actions }: BriefTabsProps) {
+export function BriefTabs({ devpost, readme }: BriefTabsProps) {
   const [active, setActive] = useState<BriefTab>("devpost");
 
   return (
     <div>
       {/* Sticky rather than a nested scroll container: the pane already
           scrolls, and nesting two scrollers makes the wheel target ambiguous. */}
-      <div className="sticky top-0 z-10 flex items-center border-b border-border bg-background px-5">
-        <div role="tablist" aria-label="Brief source" className="flex gap-1">
+      <div
+        role="tablist"
+        aria-label="Brief source"
+        className="sticky top-0 z-10 flex gap-1 border-b border-border bg-background px-5"
+      >
         {TABS.map((tab) => {
           const selected = tab.id === active;
           return (
@@ -47,10 +48,6 @@ export function BriefTabs({ devpost, readme, actions }: BriefTabsProps) {
             </button>
           );
         })}
-        </div>
-        {actions?.[active] ? (
-          <div className="ml-auto pl-4">{actions[active]}</div>
-        ) : null}
       </div>
 
       {TABS.map((tab) => (
