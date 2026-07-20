@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, UserRound } from "lucide-react";
+import { LogOut, Star, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 
@@ -69,6 +69,15 @@ export function AccountMenu({ account }: { account: HeaderAccount }) {
           >
             <UserRound size={15} />
             Profile
+          </Link>
+          <Link
+            href="/starred"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="flex h-9 w-full items-center gap-2 px-3 text-left text-sm text-foreground transition-colors hover:bg-foreground/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+          >
+            <Star size={15} />
+            Starred
           </Link>
           <form action="/signout" method="post">
             <button

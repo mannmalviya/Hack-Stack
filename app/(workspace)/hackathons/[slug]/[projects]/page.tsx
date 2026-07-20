@@ -10,7 +10,12 @@ import { ReadmeMarkdown } from "@/components/projects/readme-markdown";
 import { ProjectEvidenceList } from "@/components/projects/project-evidence-list";
 import { SourceLink } from "@/components/projects/source-link";
 import { TeamStats } from "@/components/projects/team-stats";
+import { StarButton } from "@/components/projects/star-button";
+import { getProjectArchitecture } from "@/lib/architecture/project-architecture";
+import { getSignedInUserId } from "@/lib/auth/current-user";
 import { getProjectEvidence } from "@/lib/data/project-evidence";
+import { isProjectStarred } from "@/lib/data/stars";
+import { setProjectStar } from "./actions";
 import { getProjectTeamStats } from "@/lib/data/project-team";
 import { getProjectBySlug, getProjectNeighbours } from "@/lib/data/projects";
 import { getGithubReadme } from "@/lib/github/readme-cache";
@@ -58,11 +63,14 @@ export default async function ProjectPage({ params }: PageProps) {
   const project = await getProjectBySlug(slug, projects);
   if (!project) notFound();
 
-  const [readme, neighbours, teamStats, evidence] = await Promise.all([
+  const userId = await getSignedInUserId();
+  const [readme, neighbours, teamStats, evidence, architecture, starred] = await Promise.all([
     getGithubReadme(project.githubUrl),
     getProjectNeighbours(slug, projects),
     getProjectTeamStats(slug, projects),
     getProjectEvidence(slug, projects),
+    getProjectArchitecture(slug, projects),
+    isProjectStarred(userId, project.id),
   ]);
   const repoUrl = githubRepoUrl(project.githubUrl);
 
@@ -72,11 +80,23 @@ export default async function ProjectPage({ params }: PageProps) {
       rightLabel="Analysis"
       rightIcon={<Search size={16} aria-hidden="true" />}
       dividerControls={
-        <ProjectNav
-          hackathonSlug={project.hackathonSlug}
-          previous={neighbours.previous}
-          next={neighbours.next}
-        />
+        <div className="flex items-center gap-2">
+          <ProjectNav
+            hackathonSlug={project.hackathonSlug}
+            previous={neighbours.previous}
+            next={neighbours.next}
+          />
+          <StarButton
+            projectId={project.id}
+            initialStarred={starred}
+            signInHref={
+              userId
+                ? null
+                : `/login?next=/hackathons/${project.hackathonSlug}/${project.slug}`
+            }
+            onSetStar={setProjectStar}
+          />
+        </div>
       }
       left={
         <BriefTabs
@@ -116,6 +136,12 @@ export default async function ProjectPage({ params }: PageProps) {
               </div>
             )
           }
+        />
+      }
+      right={
+        <AnalysisTabs
+          architecture={architecture}
+          hasGithubUrl={Boolean(project.githubUrl)}
           team={
             <TeamStats
               stats={teamStats}
@@ -127,7 +153,6 @@ export default async function ProjectPage({ params }: PageProps) {
           }
         />
       }
-      right={<AnalysisTabs />}
     />
   );
 }

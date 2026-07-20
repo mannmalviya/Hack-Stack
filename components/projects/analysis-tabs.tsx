@@ -1,15 +1,9 @@
-import { PaneTabs } from "@/components/projects/pane-tabs";
+import { MessagesSquare } from "lucide-react";
+import type { ReactNode } from "react";
 
-function Scaffold({ title, note }: { title: string; note: string }) {
-  return (
-    <div className="p-5">
-      <div className="border border-dashed border-border px-6 py-16 text-center">
-        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">{title}</p>
-        <p className="mx-auto mt-3 max-w-sm text-xs leading-relaxed text-muted">{note}</p>
-      </div>
-    </div>
-  );
-}
+import { ArchitecturePanel } from "@/components/projects/architecture-panel";
+import { PaneTabs } from "@/components/projects/pane-tabs";
+import type { ProjectArchitecture } from "@/lib/architecture/project-architecture";
 
 /*
  * TODO(ai-chat): Not implemented — owned by a teammate.
@@ -25,46 +19,54 @@ function Scaffold({ title, note }: { title: string; note: string }) {
  *   skill and `trigger/` for the chat.agent pattern.
  * - Context worth feeding it is already queried elsewhere: the Devpost
  *   description sections (lib/devpost/description.ts), the README
- *   (lib/github/readme.ts), and per-project evidence
- *   (lib/data/project-evidence.ts).
+ *   (lib/github/readme.ts), per-project evidence (lib/data/project-evidence.ts)
+ *   and now the indexed file structure (lib/architecture/project-architecture.ts).
  */
 function AiChatPanel() {
   return (
-    <Scaffold
-      title="AI Chat"
-      note="Not implemented yet. See the TODO in components/projects/analysis-tabs.tsx for the intended scope."
-    />
+    <div className="p-5">
+      <div className="border border-border bg-surface px-6 py-16 text-center">
+        <MessagesSquare
+          size={20}
+          aria-hidden="true"
+          className="mx-auto text-muted"
+        />
+        <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
+          Coming soon
+        </p>
+        <p className="mx-auto mt-3 max-w-sm text-xs leading-relaxed text-muted">
+          You will be able to ask questions about this project and get answers cited back
+          to the submission, the readme and the indexed code.
+        </p>
+      </div>
+    </div>
   );
 }
 
-/*
- * TODO(architecture): Scaffolding only — to be built on a separate branch.
- *
- * Intended to visualise how the project is actually put together: entry points,
- * routes/components, and dependency relationships. The data to build on already
- * exists and is unused by any UI:
- * - private.repository_files (path, language, size) — the file tree
- * - private.repository_dependencies (ecosystem, package, kind, manifest path)
- * - lib/insights/hackathon-analytics.ts for language/technology normalisation
- * Nothing here is wired to a query yet, deliberately.
- */
-function ArchitecturePanel() {
-  return (
-    <Scaffold
-      title="Architecture"
-      note="Scaffolding only. Implementation is planned on a separate branch; see the TODO in components/projects/analysis-tabs.tsx."
-    />
-  );
-}
-
-export function AnalysisTabs() {
+export function AnalysisTabs({
+  architecture,
+  hasGithubUrl,
+  team,
+}: {
+  architecture: ProjectArchitecture | null;
+  hasGithubUrl: boolean;
+  /** Rendered by the page: the team stats own their own data source. */
+  team: ReactNode;
+}) {
   return (
     <PaneTabs
       ariaLabel="Analysis view"
       idPrefix="analysis"
       tabs={[
+        { id: "team", label: "Team", content: team },
+        {
+          id: "architecture",
+          label: "Architecture",
+          content: (
+            <ArchitecturePanel architecture={architecture} hasGithubUrl={hasGithubUrl} />
+          ),
+        },
         { id: "chat", label: "AI Chat", content: <AiChatPanel /> },
-        { id: "architecture", label: "Architecture", content: <ArchitecturePanel /> },
       ]}
     />
   );
