@@ -2,20 +2,22 @@
 
 import { type ReactNode, useState } from "react";
 
-type BriefTab = "devpost" | "readme";
+type BriefTab = "devpost" | "readme" | "team";
 
 const TABS: Array<{ id: BriefTab; label: string }> = [
   { id: "devpost", label: "Devpost" },
   { id: "readme", label: "Readme" },
+  { id: "team", label: "Team" },
 ];
 
 export type BriefTabsProps = {
   devpost: ReactNode;
   readme: ReactNode;
+  team: ReactNode;
 };
 
 /** Both panels stay mounted so switching tabs never re-fetches or re-renders. */
-export function BriefTabs({ devpost, readme }: BriefTabsProps) {
+export function BriefTabs({ devpost, readme, team }: BriefTabsProps) {
   const [active, setActive] = useState<BriefTab>("devpost");
 
   return (
@@ -58,7 +60,7 @@ export function BriefTabs({ devpost, readme }: BriefTabsProps) {
           aria-labelledby={`brief-tab-${tab.id}`}
           className={tab.id === active ? undefined : "hidden"}
         >
-          {tab.id === "devpost" ? devpost : readme}
+          {tab.id === "devpost" ? devpost : tab.id === "readme" ? readme : team}
         </div>
       ))}
     </div>

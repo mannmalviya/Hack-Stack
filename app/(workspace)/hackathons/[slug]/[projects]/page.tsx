@@ -6,7 +6,11 @@ import { DevpostBrief } from "@/components/projects/devpost-brief";
 import { ProjectNav } from "@/components/projects/project-nav";
 import { ProjectWorkspace } from "@/components/projects/project-workspace";
 import { ReadmeMarkdown } from "@/components/projects/readme-markdown";
+import { ProjectEvidenceList } from "@/components/projects/project-evidence-list";
 import { SourceLink } from "@/components/projects/source-link";
+import { TeamStats } from "@/components/projects/team-stats";
+import { getProjectEvidence } from "@/lib/data/project-evidence";
+import { getProjectTeamStats } from "@/lib/data/project-team";
 import { getProjectBySlug, getProjectNeighbours } from "@/lib/data/projects";
 import { getGithubReadme } from "@/lib/github/readme-cache";
 import { parseGithubRepositoryUrl } from "@/lib/github/urls";
@@ -53,9 +57,11 @@ export default async function ProjectPage({ params }: PageProps) {
   const project = await getProjectBySlug(slug, projects);
   if (!project) notFound();
 
-  const [readme, neighbours] = await Promise.all([
+  const [readme, neighbours, teamStats, evidence] = await Promise.all([
     getGithubReadme(project.githubUrl),
     getProjectNeighbours(slug, projects),
+    getProjectTeamStats(slug, projects),
+    getProjectEvidence(slug, projects),
   ]);
   const repoUrl = githubRepoUrl(project.githubUrl);
 
@@ -108,6 +114,14 @@ export default async function ProjectPage({ params }: PageProps) {
                 />
               </div>
             )
+          }
+          team={
+            <TeamStats
+              stats={teamStats}
+              evidence={
+                evidence ? <ProjectEvidenceList evidence={evidence} /> : null
+              }
+            />
           }
         />
       }
