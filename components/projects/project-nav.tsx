@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -84,6 +84,14 @@ export function ProjectNav({ hackathonSlug, previous, next }: ProjectNavProps) {
       aria-label="Project navigation"
       className="flex items-center gap-1 border border-border bg-surface p-1 shadow-lg"
     >
+      <Link
+        href={`/hackathons/${hackathonSlug}?view=projects`}
+        aria-label="Back to all projects"
+        title="Back to all projects"
+        className={`${BUTTON} text-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50`}
+      >
+        <ArrowLeft size={16} aria-hidden="true" />
+      </Link>
       <NavButton hackathonSlug={hackathonSlug} project={previous} direction="previous" />
       <NavButton hackathonSlug={hackathonSlug} project={next} direction="next" />
     </nav>

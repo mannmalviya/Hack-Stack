@@ -56,9 +56,9 @@ export default async function HackathonPage({ params, searchParams }: PageProps)
 
   return (
     <div className="space-y-8">
-      <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
+      <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 font-mono text-[13px] uppercase tracking-[0.14em] text-muted">
         <Link href="/hackathons" className="transition-colors hover:text-foreground">Hackathons</Link>
-        <ChevronRight size={12} />
+        <ChevronRight size={14} />
         <span className="truncate text-foreground">{hackathon.name}</span>
       </nav>
 

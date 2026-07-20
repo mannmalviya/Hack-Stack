@@ -20,6 +20,16 @@ function StarIcon({ filled }: { filled: boolean }) {
   );
 }
 
+/** The public star total. Announced separately so the control's own label stays terse. */
+function StarCount({ value }: { value: number }) {
+  return (
+    <span className="pr-1.5 pl-0.5 font-mono text-xs tabular-nums text-muted">
+      <span className="sr-only">{value === 1 ? "1 star" : `${value} stars`}</span>
+      <span aria-hidden="true">{value}</span>
+    </span>
+  );
+}
+
 /**
  * Stars the current project, or sends a guest to sign in.
  *
@@ -29,17 +39,21 @@ function StarIcon({ filled }: { filled: boolean }) {
 export function StarButton({
   projectId,
   initialStarred,
+  initialStarCount,
   signInHref,
   onSetStar,
 }: {
   projectId: string;
   initialStarred: boolean;
+  /** Total stars across all users — shown to guests and signed-in viewers alike. */
+  initialStarCount: number;
   /** Where a guest lands to sign in; null when the viewer is signed in. */
   signInHref: string | null;
   /** Passed down from the page so this stays decoupled from the route. */
   onSetStar: (input: { projectId: string; starred: boolean }) => Promise<SetProjectStarResult>;
 }) {
   const [starred, setStarred] = useState(initialStarred);
+  const [starCount, setStarCount] = useState(initialStarCount);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -54,6 +68,7 @@ export function StarButton({
         >
           <StarIcon filled={false} />
         </Link>
+        <StarCount value={starCount} />
       </div>
     );
   }
@@ -62,11 +77,13 @@ export function StarButton({
     const next = !starred;
     // Optimistic: the round trip is not worth a delay on a one-bit control.
     setStarred(next);
+    setStarCount((current) => current + (next ? 1 : -1));
     setError(null);
     startTransition(async () => {
       const result = await onSetStar({ projectId, starred: next });
       if (result.outcome === "error") {
         setStarred(!next);
+        setStarCount((current) => current + (next ? -1 : 1));
         setError(result.message);
       }
     });
@@ -88,6 +105,7 @@ export function StarButton({
       >
         <StarIcon filled={starred} />
       </button>
+      <StarCount value={starCount} />
     </div>
   );
 }
