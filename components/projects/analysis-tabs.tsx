@@ -1,9 +1,9 @@
-import { MessagesSquare } from "lucide-react";
+import { ExportContextButton } from "@/components/projects/export-context-button";
+import { PaneTabs } from "@/components/projects/pane-tabs";
 import type { ReactNode } from "react";
 
 import { ArchitecturePanel } from "@/components/projects/architecture-panel";
 import { FeatureVerificationPanel } from "@/components/projects/feature-verification-panel";
-import { PaneTabs } from "@/components/projects/pane-tabs";
 import type { ProjectArchitecture } from "@/lib/architecture/project-architecture";
 import type { FeatureVerificationReport } from "@/lib/data/feature-verification";
 
@@ -24,22 +24,24 @@ import type { FeatureVerificationReport } from "@/lib/data/feature-verification"
  *   (lib/github/readme.ts), per-project evidence (lib/data/project-evidence.ts)
  *   and now the indexed file structure (lib/architecture/project-architecture.ts).
  */
-function AiChatPanel() {
+function AiChatPanel({
+  hackathonSlug,
+  projectSlug,
+}: {
+  hackathonSlug: string;
+  projectSlug: string;
+}) {
   return (
-    <div className="p-5">
-      <div className="border border-border bg-surface px-6 py-16 text-center">
-        <MessagesSquare
-          size={20}
-          aria-hidden="true"
-          className="mx-auto text-muted"
+    <div>
+      <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-3">
+        <p className="text-xs leading-relaxed text-muted">
+          Export this project&apos;s context (description, README, evidence, key
+          source files) to chat with an AI agent elsewhere.
+        </p>
+        <ExportContextButton
+          hackathonSlug={hackathonSlug}
+          projectSlug={projectSlug}
         />
-        <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
-          Coming soon
-        </p>
-        <p className="mx-auto mt-3 max-w-sm text-xs leading-relaxed text-muted">
-          You will be able to ask questions about this project and get answers cited back
-          to the submission, the readme and the indexed code.
-        </p>
       </div>
     </div>
   );
@@ -50,12 +52,16 @@ export function AnalysisTabs({
   hasGithubUrl,
   featureVerification,
   team,
+  hackathonSlug,
+  projectSlug,
 }: {
   architecture: ProjectArchitecture | null;
   hasGithubUrl: boolean;
   featureVerification: FeatureVerificationReport | null;
   /** Rendered by the page: the team stats own their own data source. */
   team: ReactNode;
+  hackathonSlug: string;
+  projectSlug: string;
 }) {
   return (
     <PaneTabs
@@ -75,7 +81,16 @@ export function AnalysisTabs({
           label: "Features",
           content: <FeatureVerificationPanel report={featureVerification} />,
         },
-        { id: "chat", label: "AI Chat", content: <AiChatPanel /> },
+        {
+          id: "chat",
+          label: "AI Chat",
+          content: (
+            <AiChatPanel
+              hackathonSlug={hackathonSlug}
+              projectSlug={projectSlug}
+            />
+          ),
+        },
       ]}
     />
   );
