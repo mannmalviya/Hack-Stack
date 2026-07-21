@@ -53,6 +53,13 @@ function parseConcurrency(argv: string[]): number {
   return value;
 }
 
+// `--winners-only` restricts the run to projects marked as winners
+// (projects.is_winner), a cheap way to bound token spend to the projects most
+// likely to matter first.
+function parseWinnersOnly(argv: string[]): boolean {
+  return argv.includes("--winners-only");
+}
+
 // Restrict the run to a single hackathon, identified by its Devpost slug (the
 // same value used in project page URLs, e.g. "cal-hacks-11-0").
 function parseHackathon(argv: string[]): string | undefined {
@@ -93,6 +100,7 @@ async function main() {
   const limit = parseLimit(argv);
   const concurrency = parseConcurrency(argv);
   const hackathonSlug = parseHackathon(argv);
+  const winnersOnly = parseWinnersOnly(argv);
   requiredEnvironment("DATABASE_URL");
   const githubToken = process.env.GITHUB_TOKEN;
 
@@ -149,10 +157,14 @@ async function main() {
       }
       console.log(`Restricting to hackathon: ${hackathonSlug}`);
     }
+    if (winnersOnly) {
+      console.log("Restricting to winning projects only");
+    }
 
     // Every project with an ingested repo and a repo URL that has not yet been
     // verified successfully. Re-runs retry failed/partial and skip succeeded.
     // When --hackathon is set, only that hackathon's projects are considered.
+    // When --winners-only is set, only projects marked as winners are considered.
     const candidatesQuery = db
       .select({
         projectRepositoryId: projectRepositories.id,
@@ -163,6 +175,20 @@ async function main() {
       .where(
         and(
           sql`nullif(btrim(${projectRepositories.sourceUrl}), '') is not null`,
+          // Optional winners-only filter (undefined is ignored by drizzle's and()).
+          winnersOnly
+            ? exists(
+                db
+                  .select({ one: sql`1` })
+                  .from(projects)
+                  .where(
+                    and(
+                      eq(projects.id, projectRepositories.projectId),
+                      eq(projects.isWinner, true),
+                    ),
+                  ),
+              )
+            : undefined,
           // Optional hackathon filter (undefined is ignored by drizzle's and()).
           hackathonSlug
             ? exists(

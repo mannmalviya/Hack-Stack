@@ -165,6 +165,8 @@ export default async function ProjectPage({ params }: PageProps) {
               }
             />
           }
+          hackathonSlug={slug}
+          projectSlug={projects}
         />
       }
     />
