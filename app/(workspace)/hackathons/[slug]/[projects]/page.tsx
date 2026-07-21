@@ -127,7 +127,7 @@ export default async function ProjectPage({ params }: PageProps) {
           }
         />
       }
-      right={<AnalysisTabs />}
+      right={<AnalysisTabs hackathonSlug={slug} projectSlug={projects} />}
     />
   );
 }

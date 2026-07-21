@@ -1,3 +1,4 @@
+import { ExportContextButton } from "@/components/projects/export-context-button";
 import { PaneTabs } from "@/components/projects/pane-tabs";
 
 function Scaffold({ title, note }: { title: string; note: string }) {
@@ -28,12 +29,30 @@ function Scaffold({ title, note }: { title: string; note: string }) {
  *   (lib/github/readme.ts), and per-project evidence
  *   (lib/data/project-evidence.ts).
  */
-function AiChatPanel() {
+function AiChatPanel({
+  hackathonSlug,
+  projectSlug,
+}: {
+  hackathonSlug: string;
+  projectSlug: string;
+}) {
   return (
-    <Scaffold
-      title="AI Chat"
-      note="Not implemented yet. See the TODO in components/projects/analysis-tabs.tsx for the intended scope."
-    />
+    <div>
+      <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-3">
+        <p className="text-xs leading-relaxed text-muted">
+          Export this project&apos;s context (description, README, evidence, key
+          source files) to chat with an AI agent elsewhere.
+        </p>
+        <ExportContextButton
+          hackathonSlug={hackathonSlug}
+          projectSlug={projectSlug}
+        />
+      </div>
+      <Scaffold
+        title="AI Chat"
+        note="Not implemented yet. See the TODO in components/projects/analysis-tabs.tsx for the intended scope."
+      />
+    </div>
   );
 }
 
@@ -57,13 +76,28 @@ function ArchitecturePanel() {
   );
 }
 
-export function AnalysisTabs() {
+export function AnalysisTabs({
+  hackathonSlug,
+  projectSlug,
+}: {
+  hackathonSlug: string;
+  projectSlug: string;
+}) {
   return (
     <PaneTabs
       ariaLabel="Analysis view"
       idPrefix="analysis"
       tabs={[
-        { id: "chat", label: "AI Chat", content: <AiChatPanel /> },
+        {
+          id: "chat",
+          label: "AI Chat",
+          content: (
+            <AiChatPanel
+              hackathonSlug={hackathonSlug}
+              projectSlug={projectSlug}
+            />
+          ),
+        },
         { id: "architecture", label: "Architecture", content: <ArchitecturePanel /> },
       ]}
     />
