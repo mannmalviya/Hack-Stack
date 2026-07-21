@@ -1,16 +1,9 @@
 import { ExportContextButton } from "@/components/projects/export-context-button";
 import { PaneTabs } from "@/components/projects/pane-tabs";
+import type { ReactNode } from "react";
 
-function Scaffold({ title, note }: { title: string; note: string }) {
-  return (
-    <div className="p-5">
-      <div className="border border-dashed border-border px-6 py-16 text-center">
-        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">{title}</p>
-        <p className="mx-auto mt-3 max-w-sm text-xs leading-relaxed text-muted">{note}</p>
-      </div>
-    </div>
-  );
-}
+import { ArchitecturePanel } from "@/components/projects/architecture-panel";
+import type { ProjectArchitecture } from "@/lib/architecture/project-architecture";
 
 /*
  * TODO(ai-chat): Not implemented — owned by a teammate.
@@ -26,8 +19,8 @@ function Scaffold({ title, note }: { title: string; note: string }) {
  *   skill and `trigger/` for the chat.agent pattern.
  * - Context worth feeding it is already queried elsewhere: the Devpost
  *   description sections (lib/devpost/description.ts), the README
- *   (lib/github/readme.ts), and per-project evidence
- *   (lib/data/project-evidence.ts).
+ *   (lib/github/readme.ts), per-project evidence (lib/data/project-evidence.ts)
+ *   and now the indexed file structure (lib/architecture/project-architecture.ts).
  */
 function AiChatPanel({
   hackathonSlug,
@@ -48,38 +41,21 @@ function AiChatPanel({
           projectSlug={projectSlug}
         />
       </div>
-      <Scaffold
-        title="AI Chat"
-        note="Not implemented yet. See the TODO in components/projects/analysis-tabs.tsx for the intended scope."
-      />
     </div>
   );
 }
 
-/*
- * TODO(architecture): Scaffolding only — to be built on a separate branch.
- *
- * Intended to visualise how the project is actually put together: entry points,
- * routes/components, and dependency relationships. The data to build on already
- * exists and is unused by any UI:
- * - private.repository_files (path, language, size) — the file tree
- * - private.repository_dependencies (ecosystem, package, kind, manifest path)
- * - lib/insights/hackathon-analytics.ts for language/technology normalisation
- * Nothing here is wired to a query yet, deliberately.
- */
-function ArchitecturePanel() {
-  return (
-    <Scaffold
-      title="Architecture"
-      note="Scaffolding only. Implementation is planned on a separate branch; see the TODO in components/projects/analysis-tabs.tsx."
-    />
-  );
-}
-
 export function AnalysisTabs({
+  architecture,
+  hasGithubUrl,
+  team,
   hackathonSlug,
   projectSlug,
 }: {
+  architecture: ProjectArchitecture | null;
+  hasGithubUrl: boolean;
+  /** Rendered by the page: the team stats own their own data source. */
+  team: ReactNode;
   hackathonSlug: string;
   projectSlug: string;
 }) {
@@ -88,6 +64,14 @@ export function AnalysisTabs({
       ariaLabel="Analysis view"
       idPrefix="analysis"
       tabs={[
+        { id: "team", label: "Team", content: team },
+        {
+          id: "architecture",
+          label: "Architecture",
+          content: (
+            <ArchitecturePanel architecture={architecture} hasGithubUrl={hasGithubUrl} />
+          ),
+        },
         {
           id: "chat",
           label: "AI Chat",
@@ -98,7 +82,6 @@ export function AnalysisTabs({
             />
           ),
         },
-        { id: "architecture", label: "Architecture", content: <ArchitecturePanel /> },
       ]}
     />
   );

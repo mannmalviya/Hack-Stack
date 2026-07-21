@@ -9,6 +9,7 @@ import { hackerTeamMetrics } from "./hacker-team-metrics";
 import { projectRepositories } from "./project-repositories";
 import { projectEmbeddingSources } from "./project-embedding-sources";
 import { projects } from "./projects";
+import { projectStars } from "./project-stars";
 import { repositoryCommits } from "./repository-commits";
 import { repositoryCommitAuthors } from "./repository-commit-authors";
 import { repositoryDependencies } from "./repository-dependencies";
@@ -20,6 +21,7 @@ import { repositoryIngestionRuns } from "./repository-ingestion-runs";
 export { indexingRequests } from "./indexing-requests";
 export { hackathons } from "./hackathons";
 export { projects } from "./projects";
+export { projectStars } from "./project-stars";
 export { githubRepositories, privateSchema } from "./github-repositories";
 export { hackerContributorMetrics } from "./hacker-contributor-metrics";
 export { hackerInsightRuns } from "./hacker-insight-runs";
@@ -66,6 +68,16 @@ export const projectsRelations = relations(projects, ({ many, one }) => ({
     references: [projectEmbeddingSources.projectId],
   }),
   hackerTeamMetrics: many(hackerTeamMetrics),
+  stars: many(projectStars),
+}));
+
+// A star belongs to one project. Its user lives in Supabase's auth schema, so
+// there is no relation to declare on that side.
+export const projectStarsRelations = relations(projectStars, ({ one }) => ({
+  project: one(projects, {
+    fields: [projectStars.projectId],
+    references: [projects.id],
+  }),
 }));
 
 export const projectEmbeddingSourcesRelations = relations(

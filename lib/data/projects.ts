@@ -7,6 +7,7 @@ import { hackathons, projects } from "@/db/schema";
 import { getProjectCoverPublicUrl } from "@/lib/supabase/project-covers";
 
 export type ProjectDetail = {
+  id: string;
   slug: string;
   name: string;
   tagline: string | null;
@@ -32,6 +33,7 @@ export async function getProjectBySlug(
 ): Promise<ProjectDetail | null> {
   const [row] = await db
     .select({
+      id: projects.id,
       slug: projects.devpostSlug,
       name: projects.name,
       tagline: projects.tagline,
