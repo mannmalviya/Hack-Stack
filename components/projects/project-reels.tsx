@@ -54,7 +54,7 @@ type CardProps = {
   showHackathon: boolean;
   signedIn: boolean;
   onSetStar: SetStar;
-  /** Inactive cards keep their frame but drop the iframe, so off-screen videos stop loading and playing. */
+  /** Inactive cards keep their frame but drop the iframe, stopping playback. */
   active: boolean;
 };
 
@@ -67,7 +67,16 @@ function ReelCard({
   active,
 }: CardProps) {
   return (
-    <article className="border border-border bg-surface p-3 shadow-lg">
+    <article
+      // Links and buttons live inside a draggable card in swipe mode. Keep
+      // their pointer gestures from also starting a card drag.
+      onPointerDown={(event) => {
+        if ((event.target as HTMLElement).closest("a, button")) {
+          event.stopPropagation();
+        }
+      }}
+      className="border border-border bg-surface p-3 shadow-lg"
+    >
       <div className="relative aspect-video w-full bg-foreground/[0.03]">
         {active ? (
           <iframe
@@ -240,7 +249,9 @@ function ScrollFeed({
                 showHackathon={showHackathon}
                 signedIn={signedIn}
                 onSetStar={onSetStar}
-                active={Math.abs(slideIndex - index) <= 1}
+                // Only the selected iframe may stay mounted. Keeping adjacent
+                // embeds warm lets their audio continue after scrolling away.
+                active={slideIndex === index}
               />
             </div>
           </div>

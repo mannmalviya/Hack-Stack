@@ -1,7 +1,6 @@
 "use server";
 
 import { and, eq } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { db } from "@/db";
@@ -57,6 +56,8 @@ export async function setProjectStar(
     return { outcome: "error", message: "Couldn't save that. Please try again." };
   }
 
-  revalidatePath("/starred");
+  // `/starred` is force-dynamic, so its next visit reads the mutation without
+  // cache invalidation. Revalidating here clears Next's client router cache and
+  // disrupts stateful feeds (especially Discover's randomized project order).
   return { outcome: "success", starred };
 }

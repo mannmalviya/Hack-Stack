@@ -80,7 +80,12 @@ export function StarButton({
     setStarCount((current) => current + (next ? 1 : -1));
     setError(null);
     startTransition(async () => {
-      const result = await onSetStar({ projectId, starred: next });
+      let result: SetProjectStarResult;
+      try {
+        result = await onSetStar({ projectId, starred: next });
+      } catch {
+        result = { outcome: "error", message: "Couldn't save that. Please try again." };
+      }
       if (result.outcome === "error") {
         setStarred(!next);
         setStarCount((current) => current + (next ? -1 : 1));
