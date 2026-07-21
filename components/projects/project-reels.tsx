@@ -28,6 +28,10 @@ import type { SetProjectStarResult } from "@/app/(workspace)/hackathons/[slug]/[
 import { hasModifier, isEditableTarget } from "@/lib/keyboard";
 import { DUR, EASE_OUT } from "@/components/motion/tokens";
 import { ShuffleButton } from "@/components/discover/shuffle-button";
+import {
+  ReelAnalysisRails,
+  type LoadReelAnalysis,
+} from "@/components/projects/reel-analysis-rails";
 import { SourceLink } from "@/components/projects/source-link";
 import { StarButton } from "@/components/projects/star-button";
 import type { ProjectReelItem } from "@/lib/data/project-reels";
@@ -54,7 +58,7 @@ type CardProps = {
   showHackathon: boolean;
   signedIn: boolean;
   onSetStar: SetStar;
-  /** Inactive cards keep their frame but drop the iframe, so off-screen videos stop loading and playing. */
+  /** Inactive cards keep their frame but drop the iframe, stopping playback. */
   active: boolean;
 };
 
@@ -67,7 +71,16 @@ function ReelCard({
   active,
 }: CardProps) {
   return (
-    <article className="border border-border bg-surface p-3 shadow-lg">
+    <article
+      // Links and buttons live inside a draggable card in swipe mode. Keep
+      // their pointer gestures from also starting a card drag.
+      onPointerDown={(event) => {
+        if ((event.target as HTMLElement).closest("a, button")) {
+          event.stopPropagation();
+        }
+      }}
+      className="border border-border bg-surface p-3 shadow-lg"
+    >
       <div className="relative aspect-video w-full bg-foreground/[0.03]">
         {active ? (
           <iframe
@@ -240,7 +253,9 @@ function ScrollFeed({
                 showHackathon={showHackathon}
                 signedIn={signedIn}
                 onSetStar={onSetStar}
-                active={Math.abs(slideIndex - index) <= 1}
+                // Only the selected iframe may stay mounted. Keeping adjacent
+                // embeds warm lets their audio continue after scrolling away.
+                active={slideIndex === index}
               />
             </div>
           </div>
@@ -554,6 +569,8 @@ export type ProjectReelsProps = {
   items: ProjectReelItem[];
   signedIn: boolean;
   onSetStar: SetStar;
+  /** Loads the active card's compact analysis for the side rails. */
+  onLoadAnalysis: LoadReelAnalysis;
   /** Caption each card with its hackathon — for feeds that mix events. */
   showHackathon?: boolean;
   /** Adds the shuffle control — only meaningful for a randomised feed. */
@@ -570,6 +587,7 @@ export function ProjectReels({
   items,
   signedIn,
   onSetStar,
+  onLoadAnalysis,
   showHackathon = false,
   showShuffle = false,
   emptyNote,
@@ -685,10 +703,14 @@ export function ProjectReels({
             {emptyNote}
           </p>
         </div>
-      ) : mode === "scroll" ? (
-        <ScrollFeed {...feedProps} />
       ) : (
-        <SwipeDeck {...feedProps} />
+        <ReelAnalysisRails
+          // Past the deck's end (index === length) there is no active project.
+          item={mergedItems[index] ?? null}
+          loadAnalysis={onLoadAnalysis}
+        >
+          {mode === "scroll" ? <ScrollFeed {...feedProps} /> : <SwipeDeck {...feedProps} />}
+        </ReelAnalysisRails>
       )}
     </div>
   );
