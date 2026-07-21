@@ -2,6 +2,10 @@ import "server-only";
 
 import { getProjectArchitecture } from "@/lib/architecture/project-architecture";
 import {
+  getProjectFeatureVerification,
+  type VerificationOutcome,
+} from "@/lib/data/feature-verification";
+import {
   getProjectEvidence,
   type ProjectCodebase,
   type ProjectTechnology,
@@ -31,6 +35,18 @@ export type ReelTeamAnalysis =
       hiddenContributorCount: number;
     };
 
+export type ReelFeatureCheck = {
+  name: string;
+  outcome: VerificationOutcome;
+};
+
+export type ReelFeatures = {
+  /** All verified features, name + outcome, already sorted strongest-first. */
+  items: ReelFeatureCheck[];
+  /** Per-outcome tallies in a fixed order, empty outcomes dropped. */
+  counts: Array<{ outcome: VerificationOutcome; count: number }>;
+};
+
 export type ReelAnalysis = {
   /** False when no repository was indexed — claims are then unchecked, not unsupported. */
   hasIndexedRepository: boolean;
@@ -45,7 +61,17 @@ export type ReelAnalysis = {
     detectedCount: number;
     totalCount: number;
   };
+  /** Null unless the AI feature-verification run produced results to show. */
+  features: ReelFeatures | null;
 };
+
+// Strongest evidence first, matching getProjectFeatureVerification's own order.
+const FEATURE_OUTCOME_ORDER = [
+  "verified",
+  "code_supported",
+  "claimed_only",
+  "blocked",
+] as const;
 
 /**
  * The compact slice of the project page's Analysis section that the reel side
@@ -57,12 +83,33 @@ export async function getReelAnalysis(
   hackathonSlug: string,
   projectSlug: string,
 ): Promise<ReelAnalysis | null> {
-  const [evidence, teamStats, architecture] = await Promise.all([
+  const [evidence, teamStats, architecture, featureReport] = await Promise.all([
     getProjectEvidence(hackathonSlug, projectSlug),
     getProjectTeamStats(hackathonSlug, projectSlug),
     getProjectArchitecture(hackathonSlug, projectSlug),
+    getProjectFeatureVerification(hackathonSlug, projectSlug),
   ]);
   if (!evidence) return null;
+
+  // Only surface the feature-check box when a run actually produced verdicts;
+  // every "no repo / not run / still running" state simply hides it on a reel.
+  const featureItems: ReelFeatureCheck[] =
+    featureReport && featureReport.hasRepository && featureReport.features.length > 0
+      ? featureReport.features.map((feature) => ({
+          name: feature.featureName,
+          outcome: feature.verificationOutcome,
+        }))
+      : [];
+  const features: ReelFeatures | null =
+    featureItems.length > 0
+      ? {
+          items: featureItems,
+          counts: FEATURE_OUTCOME_ORDER.flatMap((outcome) => {
+            const count = featureItems.filter((feature) => feature.outcome === outcome).length;
+            return count > 0 ? [{ outcome, count }] : [];
+          }),
+        }
+      : null;
 
   const rankedContributors =
     teamStats.state === "ready"
@@ -120,5 +167,6 @@ export async function getReelAnalysis(
       ).length,
       totalCount: evidence.technologies.length,
     },
+    features,
   };
 }

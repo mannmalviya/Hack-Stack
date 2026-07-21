@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronDown } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
@@ -10,7 +11,30 @@ import { AnimatedBar } from "@/components/motion/animated-bar";
 import { DUR, EASE_OUT } from "@/components/motion/tokens";
 import { formatBytes } from "@/lib/format";
 import type { ProjectReelItem } from "@/lib/data/project-reels";
-import type { ReelAnalysis } from "@/lib/data/reel-analysis";
+import type { ReelAnalysis, ReelFeatureCheck } from "@/lib/data/reel-analysis";
+
+// Per-outcome presentation for the feature check, mirroring the project page's
+// FeatureVerificationPanel but with tighter labels for the narrow rail.
+const FEATURE_OUTCOME: Record<
+  ReelFeatureCheck["outcome"],
+  { label: string; dot: string; text: string }
+> = {
+  verified: {
+    label: "Verified",
+    dot: "bg-emerald-500",
+    text: "text-emerald-600 dark:text-emerald-400",
+  },
+  code_supported: { label: "Supported", dot: "bg-accent", text: "text-accent-text" },
+  claimed_only: {
+    label: "Claimed",
+    dot: "bg-amber-500",
+    text: "text-amber-700 dark:text-amber-400",
+  },
+  blocked: { label: "Blocked", dot: "bg-foreground/30", text: "text-muted" },
+};
+
+/** How many features show before the list collapses behind a count breakdown. */
+const FEATURES_COLLAPSED = 5;
 
 export type LoadReelAnalysis = (input: {
   hackathonSlug: string;
@@ -207,13 +231,26 @@ function TeamCard({ analysis }: { analysis: ReelAnalysis }) {
   );
 }
 
+/** A muted uppercase heading for a subsection inside the Tech stack box. */
+function StackSubLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted">{children}</p>
+  );
+}
+
+/**
+ * One box holding the whole stack: languages, libraries, the per-technology
+ * claim check, and the AI coding agents beneath it.
+ */
 function StackCard({ analysis }: { analysis: ReelAnalysis }) {
-  const hasStack =
+  const { technologies, hasIndexedRepository } = analysis;
+  const hasAnything =
     analysis.languages.length > 0 ||
     analysis.packages.top.length > 0 ||
-    analysis.agents.length > 0;
+    analysis.agents.length > 0 ||
+    technologies.totalCount > 0;
 
-  if (!analysis.hasIndexedRepository || !hasStack) {
+  if (!hasAnything) {
     return (
       <RailPanel label="Tech stack">
         <div className="p-3.5">
@@ -226,31 +263,34 @@ function StackCard({ analysis }: { analysis: ReelAnalysis }) {
   return (
     <RailPanel label="Tech stack">
       {analysis.languages.length > 0 ? (
-        <div className="space-y-2.5 p-4">
-          {analysis.languages.map((language, index) => (
-            <div key={language.name} className="flex items-center gap-2.5">
-              <span className="flex w-28 shrink-0 items-center gap-1.5 font-mono text-[10px] text-muted">
-                <TechnologyIcon name={language.name} className="size-3.5 shrink-0" />
-                <span className="truncate">{language.name}</span>
-              </span>
-              <div className="h-2 flex-1 bg-foreground/[0.06]">
-                <AnimatedBar
-                  percent={language.share}
-                  delay={Math.min(index * 0.06, 0.25)}
-                  className="bg-accent"
-                />
+        <div className="p-4">
+          <StackSubLabel>Languages</StackSubLabel>
+          <div className="mt-2.5 space-y-2.5">
+            {analysis.languages.map((language, index) => (
+              <div key={language.name} className="flex items-center gap-2.5">
+                <span className="flex w-28 shrink-0 items-center gap-1.5 font-mono text-[10px] text-muted">
+                  <TechnologyIcon name={language.name} className="size-3.5 shrink-0" />
+                  <span className="truncate">{language.name}</span>
+                </span>
+                <div className="h-2 flex-1 bg-foreground/[0.06]">
+                  <AnimatedBar
+                    percent={language.share}
+                    delay={Math.min(index * 0.06, 0.25)}
+                    className="bg-accent"
+                  />
+                </div>
+                <span className="w-9 shrink-0 text-right font-mono text-[10px] tabular-nums text-muted">
+                  {Math.round(language.share)}%
+                </span>
               </div>
-              <span className="w-9 shrink-0 text-right font-mono text-[10px] tabular-nums text-muted">
-                {Math.round(language.share)}%
-              </span>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       ) : null}
 
       {analysis.packages.top.length > 0 ? (
-        <div className="border-t border-border px-4 py-3">
-          <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted">Libraries</p>
+        <div className="border-t border-border p-4">
+          <StackSubLabel>Libraries</StackSubLabel>
           <div className="mt-2 flex flex-wrap gap-1">
             {analysis.packages.top.map((name) => (
               <span
@@ -269,20 +309,49 @@ function StackCard({ analysis }: { analysis: ReelAnalysis }) {
         </div>
       ) : null}
 
+      {technologies.totalCount > 0 ? (
+        <div className="border-t border-border">
+          <div className="px-4 pt-4">
+            <StackSubLabel>Technologies</StackSubLabel>
+          </div>
+          <ul className="mt-2.5 divide-y divide-border border-t border-border">
+            {technologies.items.map((technology) => {
+              const detected = technology.evidence === "detected";
+              return (
+                <li key={technology.name} className="flex items-center gap-2.5 px-4 py-2">
+                  <span
+                    aria-hidden="true"
+                    className={`size-2 shrink-0 ${detected ? "bg-accent" : "bg-foreground/25"}`}
+                    style={detected ? undefined : { backgroundImage: CLAIMED_STRIPES }}
+                  />
+                  <TechnologyIcon name={technology.name} className="size-3.5 shrink-0" />
+                  <span className="truncate text-[13px]">{technology.name}</span>
+                  <span className="ml-auto shrink-0 font-mono text-[10px] uppercase tracking-[0.1em] text-muted">
+                    {detected ? "In code" : hasIndexedRepository ? "Claimed" : "Unchecked"}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="border-t border-border px-4 py-2.5 font-mono text-[10px] text-muted">
+            {hasIndexedRepository
+              ? `${technologies.detectedCount} of ${technologies.totalCount} found in code`
+              : "Repo not indexed — claims unchecked"}
+            {technologies.hiddenCount > 0 ? ` · +${technologies.hiddenCount} more` : ""}
+          </p>
+        </div>
+      ) : null}
+
       <div className="flex items-center justify-between gap-3 border-t border-border px-4 py-2.5">
         {analysis.agents.length > 0 ? (
           <span className="flex items-center gap-1.5" title={analysis.agents.join(", ")}>
-            <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted">
-              Agents
-            </span>
+            <StackSubLabel>Agents</StackSubLabel>
             {analysis.agents.map((agent) => (
               <AgentLogo key={agent} agent={agent} className="size-4 shrink-0 text-accent" />
             ))}
           </span>
         ) : (
-          <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted">
-            No agent signals
-          </span>
+          <StackSubLabel>No agent signals</StackSubLabel>
         )}
         <span className="shrink-0 font-mono text-[10px] tabular-nums text-muted">
           {formatBytes(analysis.codebase.sizeBytes)} · {numberFormat.format(analysis.codebase.fileCount)} files
@@ -292,46 +361,77 @@ function StackCard({ analysis }: { analysis: ReelAnalysis }) {
   );
 }
 
-function ClaimCheckCard({ analysis }: { analysis: ReelAnalysis }) {
-  const { technologies, hasIndexedRepository } = analysis;
+/** Tiny per-outcome tally row, e.g. "3 ● 2 ●" — used in the collapsed footer. */
+function FeatureCountBreakdown({
+  counts,
+  withLabels,
+}: {
+  counts: NonNullable<ReelAnalysis["features"]>["counts"];
+  withLabels?: boolean;
+}) {
+  return (
+    <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-[10px] uppercase tracking-[0.1em]">
+      {counts.map(({ outcome, count }) => (
+        <span key={outcome} className={`flex items-center gap-1 ${FEATURE_OUTCOME[outcome].text}`}>
+          <span aria-hidden="true" className={`size-1.5 shrink-0 ${FEATURE_OUTCOME[outcome].dot}`} />
+          {count}
+          {withLabels ? ` ${FEATURE_OUTCOME[outcome].label}` : ""}
+        </span>
+      ))}
+    </span>
+  );
+}
 
-  if (technologies.totalCount === 0) {
-    return (
-      <RailPanel label="Claim check">
-        <div className="p-3.5">
-          <RailNote>No technologies were claimed or detected.</RailNote>
-        </div>
-      </RailPanel>
-    );
-  }
+/**
+ * The AI agent's per-feature verdicts: feature name + outcome. Collapses to the
+ * top few with a count breakdown when a project claims many features.
+ */
+function FeatureCheckCard({ features }: { features: NonNullable<ReelAnalysis["features"]> }) {
+  const [expanded, setExpanded] = useState(false);
+  const overflow = features.items.length > FEATURES_COLLAPSED;
+  const shown = expanded ? features.items : features.items.slice(0, FEATURES_COLLAPSED);
 
   return (
-    <RailPanel label="Claim check">
+    <RailPanel label="Feature check">
       <ul className="divide-y divide-border">
-        {technologies.items.map((technology) => {
-          const detected = technology.evidence === "detected";
+        {shown.map((feature) => {
+          const config = FEATURE_OUTCOME[feature.outcome];
           return (
-            <li key={technology.name} className="flex items-center gap-2.5 px-4 py-2">
+            <li key={feature.name} className="flex items-center gap-2.5 px-4 py-2">
+              <span aria-hidden="true" className={`size-2 shrink-0 ${config.dot}`} />
+              <span className="truncate text-[13px]">{feature.name}</span>
               <span
-                aria-hidden="true"
-                className={`size-2 shrink-0 ${detected ? "bg-accent" : "bg-foreground/25"}`}
-                style={detected ? undefined : { backgroundImage: CLAIMED_STRIPES }}
-              />
-              <TechnologyIcon name={technology.name} className="size-3.5 shrink-0" />
-              <span className="truncate text-[13px]">{technology.name}</span>
-              <span className="ml-auto shrink-0 font-mono text-[10px] uppercase tracking-[0.1em] text-muted">
-                {detected ? "In code" : hasIndexedRepository ? "Claimed" : "Unchecked"}
+                className={`ml-auto shrink-0 font-mono text-[10px] uppercase tracking-[0.1em] ${config.text}`}
+              >
+                {config.label}
               </span>
             </li>
           );
         })}
       </ul>
-      <p className="border-t border-border px-4 py-2.5 font-mono text-[10px] text-muted">
-        {hasIndexedRepository
-          ? `${technologies.detectedCount} of ${technologies.totalCount} found in code`
-          : "Repo not indexed — claims unchecked"}
-        {technologies.hiddenCount > 0 ? ` · +${technologies.hiddenCount} more` : ""}
-      </p>
+
+      {overflow ? (
+        <button
+          type="button"
+          onClick={() => setExpanded((value) => !value)}
+          aria-expanded={expanded}
+          className="flex w-full items-center justify-between gap-3 border-t border-border px-4 py-2.5 text-left transition-colors hover:bg-foreground/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/50"
+        >
+          <FeatureCountBreakdown counts={features.counts} />
+          <span className="flex shrink-0 items-center gap-1 font-mono text-[10px] uppercase tracking-[0.1em] text-muted">
+            {expanded ? "Show less" : `+${features.items.length - FEATURES_COLLAPSED} more`}
+            <ChevronDown
+              size={12}
+              aria-hidden="true"
+              className={`transition-transform ${expanded ? "rotate-180" : ""}`}
+            />
+          </span>
+        </button>
+      ) : (
+        <p className="border-t border-border px-4 py-2.5">
+          <FeatureCountBreakdown counts={features.counts} withLabels />
+        </p>
+      )}
     </RailPanel>
   );
 }
@@ -347,10 +447,7 @@ function RailBody({
     return side === "team" ? (
       <RailSkeleton label="Team" rows={4} />
     ) : (
-      <>
-        <RailSkeleton label="Tech stack" rows={4} />
-        <RailSkeleton label="Claim check" rows={3} />
-      </>
+      <RailSkeleton label="Tech stack" rows={5} />
     );
   }
   if (entry.status === "error") {
@@ -359,20 +456,22 @@ function RailBody({
   if (!entry.analysis) {
     return <RailNote>No analysis for this project.</RailNote>;
   }
+  // Feature check rides under Team on the left; the right rail is stack-only.
   return side === "team" ? (
-    <TeamCard analysis={entry.analysis} />
-  ) : (
     <>
-      <StackCard analysis={entry.analysis} />
-      <ClaimCheckCard analysis={entry.analysis} />
+      <TeamCard analysis={entry.analysis} />
+      {entry.analysis.features ? <FeatureCheckCard features={entry.analysis.features} /> : null}
     </>
+  ) : (
+    <StackCard analysis={entry.analysis} />
   );
 }
 
 /**
  * Wraps a reel feed with two analysis rails on wide screens: the active
- * project's team stats on the left, its tech stack and claim check on the
- * right — the project page's Analysis section at a glance.
+ * project's team stats — plus the AI feature check when one exists — on the
+ * left, and its tech stack on the right. The project page's Analysis section
+ * at a glance.
  */
 export function ReelAnalysisRails({
   item,
@@ -393,8 +492,8 @@ export function ReelAnalysisRails({
       {children}
 
       <aside
-        aria-label="Team analytics for the current project"
-        className="absolute left-16 top-1/2 hidden w-72 -translate-y-1/2 min-[1480px]:block min-[1680px]:w-96"
+        aria-label="Team analytics and feature check for the current project"
+        className="absolute left-16 top-1/2 hidden max-h-[calc(100%-2rem)] w-72 -translate-y-1/2 overflow-y-auto [scrollbar-width:none] min-[1480px]:block min-[1680px]:w-96 [&::-webkit-scrollbar]:hidden"
       >
         {item && entry ? (
           <RailReveal id={item.id}>
@@ -404,8 +503,8 @@ export function ReelAnalysisRails({
       </aside>
 
       <aside
-        aria-label="Tech stack and claim check for the current project"
-        className="absolute right-16 top-1/2 hidden w-72 -translate-y-1/2 min-[1480px]:block min-[1680px]:w-96"
+        aria-label="Tech stack for the current project"
+        className="absolute right-16 top-1/2 hidden max-h-[calc(100%-2rem)] w-72 -translate-y-1/2 overflow-y-auto [scrollbar-width:none] min-[1480px]:block min-[1680px]:w-96 [&::-webkit-scrollbar]:hidden"
       >
         {item && entry ? (
           <RailReveal id={item.id}>
