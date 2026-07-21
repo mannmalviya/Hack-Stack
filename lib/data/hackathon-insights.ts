@@ -10,8 +10,10 @@ import {
   or,
   sql,
 } from "drizzle-orm";
+import { unstable_cache } from "next/cache";
 
 import { db } from "@/db";
+import { HACKATHON_CACHE_SECONDS, HACKATHON_CACHE_TAG } from "@/lib/data/cache";
 import {
   hackathons,
   projectRepositories,
@@ -71,7 +73,7 @@ function asStringArray(value: unknown) {
     : [];
 }
 
-export async function getHackathonInsights(slug: string): Promise<HackathonInsights> {
+async function loadHackathonInsights(slug: string): Promise<HackathonInsights> {
   const [allProjectRows, hackathonRow] = await Promise.all([
     db
       .select({
@@ -302,3 +304,14 @@ export async function getHackathonInsights(slug: string): Promise<HackathonInsig
     failedProjects,
   };
 }
+
+/**
+ * Cached for the same reason as getProjectsByHackathon: the agent-signal scan
+ * dominates this read and its inputs only move when a repository is
+ * re-ingested. See lib/data/cache.ts.
+ */
+export const getHackathonInsights = unstable_cache(
+  loadHackathonInsights,
+  ["hackathon-insights"],
+  { revalidate: HACKATHON_CACHE_SECONDS, tags: [HACKATHON_CACHE_TAG] },
+);
