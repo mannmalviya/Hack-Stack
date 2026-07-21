@@ -13,8 +13,9 @@ import { TeamStats } from "@/components/projects/team-stats";
 import { StarButton } from "@/components/projects/star-button";
 import { getProjectArchitecture } from "@/lib/architecture/project-architecture";
 import { getSignedInUserId } from "@/lib/auth/current-user";
+import { getProjectFeatureVerification } from "@/lib/data/feature-verification";
 import { getProjectEvidence } from "@/lib/data/project-evidence";
-import { isProjectStarred } from "@/lib/data/stars";
+import { getProjectStarCount, isProjectStarred } from "@/lib/data/stars";
 import { setProjectStar } from "./actions";
 import { getProjectTeamStats } from "@/lib/data/project-team";
 import { getProjectBySlug, getProjectNeighbours } from "@/lib/data/projects";
@@ -64,13 +65,24 @@ export default async function ProjectPage({ params }: PageProps) {
   if (!project) notFound();
 
   const userId = await getSignedInUserId();
-  const [readme, neighbours, teamStats, evidence, architecture, starred] = await Promise.all([
+  const [
+    readme,
+    neighbours,
+    teamStats,
+    evidence,
+    architecture,
+    featureVerification,
+    starred,
+    starCount,
+  ] = await Promise.all([
     getGithubReadme(project.githubUrl),
     getProjectNeighbours(slug, projects),
     getProjectTeamStats(slug, projects),
     getProjectEvidence(slug, projects),
     getProjectArchitecture(slug, projects),
+    getProjectFeatureVerification(slug, projects),
     isProjectStarred(userId, project.id),
+    getProjectStarCount(project.id),
   ]);
   const repoUrl = githubRepoUrl(project.githubUrl);
 
@@ -89,6 +101,7 @@ export default async function ProjectPage({ params }: PageProps) {
           <StarButton
             projectId={project.id}
             initialStarred={starred}
+            initialStarCount={starCount}
             signInHref={
               userId
                 ? null
@@ -142,6 +155,7 @@ export default async function ProjectPage({ params }: PageProps) {
         <AnalysisTabs
           architecture={architecture}
           hasGithubUrl={Boolean(project.githubUrl)}
+          featureVerification={featureVerification}
           team={
             <TeamStats
               stats={teamStats}

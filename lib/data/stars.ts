@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq } from "drizzle-orm";
 
 import { db } from "@/db";
 import { hackathons, projects, projectStars } from "@/db/schema";
@@ -63,6 +63,20 @@ export async function getStarredProjects(userId: string): Promise<FeaturedProjec
     hackathonName: row.hackathonName,
     hackathonSlug: row.hackathonSlug,
   }));
+}
+
+/**
+ * How many users have starred this project.
+ *
+ * Public: unlike `isProjectStarred`, this is not scoped to a viewer, so guests
+ * see the same number as signed-in users.
+ */
+export async function getProjectStarCount(projectId: string) {
+  const [row] = await db
+    .select({ stars: count() })
+    .from(projectStars)
+    .where(eq(projectStars.projectId, projectId));
+  return row?.stars ?? 0;
 }
 
 /** Whether this user has starred this project. False for guests. */

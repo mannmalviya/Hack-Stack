@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { ProjectCard } from "@/components/projects/project-card";
 import { ProjectGridCell } from "@/components/projects/project-grid-cell";
-import type { ProjectListItem } from "@/lib/data/hackathons";
+import type { HackathonProjectListItem } from "@/lib/data/hackathons";
 
-export function ProjectGrid({ projects, hackathonSlug }: { projects: ProjectListItem[]; hackathonSlug: string }) {
+export function ProjectGrid({ projects, hackathonSlug }: { projects: HackathonProjectListItem[]; hackathonSlug: string }) {
   const [showWinnersOnly, setShowWinnersOnly] = useState(false);
 
   if (projects.length === 0) {
@@ -39,7 +39,15 @@ export function ProjectGrid({ projects, hackathonSlug }: { projects: ProjectList
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {visibleProjects.map((project, index) => (
             <ProjectGridCell key={project.slug} delay={Math.min(index * 0.04, 0.35)}>
-              <ProjectCard project={project} hackathonSlug={hackathonSlug} index={index} />
+              <ProjectCard
+                project={project}
+                hackathonSlug={hackathonSlug}
+                index={index}
+                quickAccess={{
+                  contributors: project.contributors,
+                  agentSignals: project.agentSignals,
+                }}
+              />
             </ProjectGridCell>
           ))}
         </div>

@@ -50,6 +50,8 @@ yarn-error.log*
 # supabase (local dev — keep config.toml and migrations tracked)
 /supabase/.branches
 /supabase/.temp
+# data-only dump from `supabase db dump` — large and regenerable, never commit
+snapshot.sql
 
 # vercel
 .vercel

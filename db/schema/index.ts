@@ -3,6 +3,8 @@ import { relations } from "drizzle-orm";
 import { indexingRequests } from "./indexing-requests";
 import { hackathons } from "./hackathons";
 import { githubRepositories } from "./github-repositories";
+import { featureVerificationResults } from "./feature-verification-results";
+import { featureVerificationRuns } from "./feature-verification-runs";
 import { hackerContributorMetrics } from "./hacker-contributor-metrics";
 import { hackerInsightRuns } from "./hacker-insight-runs";
 import { hackerTeamMetrics } from "./hacker-team-metrics";
@@ -23,6 +25,8 @@ export { hackathons } from "./hackathons";
 export { projects } from "./projects";
 export { projectStars } from "./project-stars";
 export { githubRepositories, privateSchema } from "./github-repositories";
+export { featureVerificationResults } from "./feature-verification-results";
+export { featureVerificationRuns } from "./feature-verification-runs";
 export { hackerContributorMetrics } from "./hacker-contributor-metrics";
 export { hackerInsightRuns } from "./hacker-insight-runs";
 export { hackerTeamMetrics } from "./hacker-team-metrics";
@@ -151,6 +155,28 @@ export const projectRepositoriesRelations = relations(
     commits: many(repositoryCommits),
     dependencies: many(repositoryDependencies),
     files: many(repositoryFiles),
+    featureVerificationRuns: many(featureVerificationRuns),
+  }),
+);
+
+export const featureVerificationRunsRelations = relations(
+  featureVerificationRuns,
+  ({ many, one }) => ({
+    projectRepository: one(projectRepositories, {
+      fields: [featureVerificationRuns.projectRepositoryId],
+      references: [projectRepositories.id],
+    }),
+    results: many(featureVerificationResults),
+  }),
+);
+
+export const featureVerificationResultsRelations = relations(
+  featureVerificationResults,
+  ({ one }) => ({
+    run: one(featureVerificationRuns, {
+      fields: [featureVerificationResults.runId],
+      references: [featureVerificationRuns.id],
+    }),
   }),
 );
 
