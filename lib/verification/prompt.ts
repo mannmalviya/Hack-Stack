@@ -44,6 +44,8 @@ export function buildVerificationPrompt(inputs: ClaimInputs): string {
     "- Every non-empty evidence citation must point at a real file that exists in this clone. Never invent file paths or line numbers.",
     "- Never claim certainty when the supporting code, demo, or source is absent.",
     "- Use only your Read, Grep, and Glob tools to inspect the code. Do not execute, build, or run anything.",
+    "- Work efficiently: this is a fast triage, not an exhaustive audit. Use targeted Grep/Glob to jump straight to the code relevant to each feature rather than reading the whole repository, and stop investigating a feature the moment you have enough to judge it. A handful of focused searches per feature is plenty. Do not open large files in full when a scoped search will answer the question, and do not go deeper than needed to assign an outcome.",
+    "- Do not use em dashes (—) anywhere in the text you write (feature names, claims, rationales). Use commas, periods, parentheses, or a colon instead.",
     "",
     "Project claims (from Devpost and the README):",
     section("PROJECT NAME", truncate(inputs.name, MAX_FIELD_CHARS)),

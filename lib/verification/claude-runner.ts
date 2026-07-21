@@ -12,6 +12,15 @@ const CLAUDE_MAX_OUTPUT_BYTES = 32 * 1024 * 1024;
 // (never prompted), so the agent can inspect the clone but cannot mutate it.
 const ALLOWED_TOOLS = ["Read", "Grep", "Glob"];
 
+// Cost controls. Verification is a bounded triage, so it runs on a cheaper model
+// at medium effort, and each project carries a hard dollar ceiling so one
+// runaway repo cannot drain the token budget (a project that hits the cap fails
+// and the batch moves on). All three are env-overridable per run.
+const CLAUDE_MODEL = process.env.FEATURE_VERIFICATION_MODEL ?? "sonnet";
+const CLAUDE_EFFORT = process.env.FEATURE_VERIFICATION_EFFORT ?? "medium";
+const MAX_BUDGET_USD =
+  Number(process.env.FEATURE_VERIFICATION_MAX_USD) || 1.5;
+
 export type ParseResult =
   | { ok: true; payload: VerificationPayload }
   | { ok: false; reason: string; raw?: string };
@@ -93,6 +102,12 @@ export function runClaudeVerification(
         "-p",
         "--output-format",
         "json",
+        "--model",
+        CLAUDE_MODEL,
+        "--effort",
+        CLAUDE_EFFORT,
+        "--max-budget-usd",
+        String(MAX_BUDGET_USD),
         "--allowedTools",
         ...ALLOWED_TOOLS,
       ],
