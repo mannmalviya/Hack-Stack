@@ -12,8 +12,10 @@ import {
   ne,
   or,
 } from "drizzle-orm";
+import { unstable_cache } from "next/cache";
 
 import { db } from "@/db";
+import { HACKATHON_CACHE_SECONDS, HACKATHON_CACHE_TAG } from "@/lib/data/cache";
 import {
   hackathons,
   hackerContributorMetrics,
@@ -196,7 +198,7 @@ export async function getHackathonBySlug(slug: string): Promise<HackathonListIte
   return row ? mapHackathon(row) : null;
 }
 
-export async function getProjectsByHackathon(
+async function loadProjectsByHackathon(
   slug: string,
 ): Promise<HackathonProjectListItem[]> {
   const rows = await db
@@ -358,6 +360,20 @@ export async function getProjectsByHackathon(
     ),
   }));
 }
+
+/**
+ * Agent-signal detection matches repository paths and commit metadata with
+ * leading-wildcard ILIKEs, which no index can serve, so the cost scales with
+ * every file and commit indexed for the hackathon. The inputs only change when
+ * a repository is re-ingested, so the result is cached instead of rescanned on
+ * every request. Revalidation is deliberately long; a newly indexed project
+ * appears here once the entry expires.
+ */
+export const getProjectsByHackathon = unstable_cache(
+  loadProjectsByHackathon,
+  ["hackathon-projects"],
+  { revalidate: HACKATHON_CACHE_SECONDS, tags: [HACKATHON_CACHE_TAG] },
+);
 
 export async function getFeaturedProjects(limit = 6): Promise<FeaturedProject[]> {
   const rows = await db
