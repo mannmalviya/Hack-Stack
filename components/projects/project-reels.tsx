@@ -43,8 +43,10 @@ type SetStar = (input: {
 
 type ReelsMode = "scroll" | "swipe";
 
+// Matches the green project-nav buttons (ProjectNav): accent fill when active,
+// a muted filled state when an end of the feed disables the control.
 const STEP_BUTTON =
-  "inline-flex size-8 items-center justify-center text-muted transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-muted";
+  "inline-flex size-8 items-center justify-center bg-accent text-white transition-opacity hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:cursor-not-allowed disabled:bg-foreground/10 disabled:text-muted/50 disabled:hover:opacity-100";
 
 /** How far (px) or how fast (px/s) a drag must go to count as a swipe. */
 const SWIPE_OFFSET = 120;
@@ -263,7 +265,7 @@ function ScrollFeed({
       </div>
       {/* Wheel and touch input over the embed goes to the video's document, not
           this feed, so the feed carries its own step controls. */}
-      <div className="absolute right-4 top-1/2 z-10 flex -translate-y-1/2 flex-col border border-border bg-surface p-1 shadow-lg">
+      <div className="absolute right-4 top-1/2 z-10 flex -translate-y-1/2 flex-col gap-1 border border-border bg-surface p-1 shadow-lg">
         <button
           type="button"
           onClick={() => step(-1)}

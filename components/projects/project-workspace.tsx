@@ -64,7 +64,14 @@ function Pane({ label, icon, side, collapsed, onToggle, children }: PaneProps) {
 
   return (
     <section aria-label={label} className="flex h-full flex-col">
-      <header className="flex shrink-0 items-center justify-between border-b-2 border-border px-5 py-4">
+      {/* The right pane's title hugs the pane's outer (right) edge: the project
+          nav floats centred over the divider and would otherwise cover a
+          left-aligned heading. The collapse toggle stays in the same corner. */}
+      <header
+        className={`flex shrink-0 items-center gap-3 border-b-2 border-border px-5 py-4 ${
+          side === "right" ? "justify-end" : "justify-between"
+        }`}
+      >
         <h2 className="flex items-center gap-2 font-mono text-sm font-bold uppercase tracking-[0.12em] text-foreground">
           {icon}
           {label}
