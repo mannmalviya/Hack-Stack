@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { setProjectStar } from "@/app/(workspace)/hackathons/[slug]/[projects]/actions";
+import {
+  loadReelAnalysis,
+  setProjectStar,
+} from "@/app/(workspace)/hackathons/[slug]/[projects]/actions";
 import { ProjectReels } from "@/components/projects/project-reels";
 import { getSignedInUserId } from "@/lib/auth/current-user";
 import { getHackathonBySlug } from "@/lib/data/hackathons";
@@ -39,6 +42,7 @@ export default async function ProjectReelsPage({ params }: PageProps) {
       items={items}
       signedIn={Boolean(userId)}
       onSetStar={setProjectStar}
+      onLoadAnalysis={loadReelAnalysis}
       emptyNote="None of this hackathon's indexed projects submitted a demo video."
     />
   );

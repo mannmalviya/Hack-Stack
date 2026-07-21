@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 
-import { setProjectStar } from "@/app/(workspace)/hackathons/[slug]/[projects]/actions";
+import {
+  loadReelAnalysis,
+  setProjectStar,
+} from "@/app/(workspace)/hackathons/[slug]/[projects]/actions";
 import { ProjectReels } from "@/components/projects/project-reels";
 import { getSignedInUserId } from "@/lib/auth/current-user";
 import { getDiscoverReels } from "@/lib/data/project-reels";
@@ -24,6 +27,7 @@ export default async function DiscoverPage() {
       items={items}
       signedIn={Boolean(userId)}
       onSetStar={setProjectStar}
+      onLoadAnalysis={loadReelAnalysis}
       // The feed mixes events, so each card names where it came from.
       showHackathon
       showShuffle
